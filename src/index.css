@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --cn-bg:
+      radial-gradient(circle at 15% 10%, rgba(251, 113, 133, .20), transparent 28%),
+      radial-gradient(circle at 85% 70%, rgba(251, 146, 60, .18), transparent 30%),
+      linear-gradient(135deg, #fffaf3 0%, #fff1ed 50%, #fff7ed 100%);
+    --cn-text: #142033;
+    --cn-muted: #475569;
+    --cn-soft: #64748b;
+    --cn-card: rgba(255, 255, 255, .94);
+    --cn-card-solid: #ffffff;
+    --cn-border: #ffc9bd;
+    --cn-input: rgba(255, 255, 255, .96);
+    --cn-chip: #fff1ed;
+  }
+  html[data-theme-mode="dark"] {
+    --cn-bg:
+      radial-gradient(circle at 15% 15%, rgba(244, 63, 94, .22), transparent 28%),
+      radial-gradient(circle at 85% 75%, rgba(168, 85, 247, .20), transparent 30%),
+      linear-gradient(135deg, #100819 0%, #1b1024 50%, #28122c 100%);
+    --cn-text: #fff7ed;
+    --cn-muted: #d6c8d8;
+    --cn-soft: #b9a9c0;
+    --cn-card: rgba(31, 18, 40, .94);
+    --cn-card-solid: #24152f;
+    --cn-border: rgba(255, 183, 170, .30);
+    --cn-input: rgba(255, 255, 255, .08);
+    --cn-chip: rgba(255, 255, 255, .10);
+  }
+  @media (prefers-color-scheme: dark) {
+    html[data-theme-mode="system"] {
+      --cn-bg:
+        radial-gradient(circle at 15% 15%, rgba(244, 63, 94, .22), transparent 28%),
+        radial-gradient(circle at 85% 75%, rgba(168, 85, 247, .20), transparent 30%),
+        linear-gradient(135deg, #100819 0%, #1b1024 50%, #28122c 100%);
+      --cn-text: #fff7ed;
+      --cn-muted: #d6c8d8;
+      --cn-soft: #b9a9c0;
+      --cn-card: rgba(31, 18, 40, .94);
+      --cn-card-solid: #24152f;
+      --cn-border: rgba(255, 183, 170, .30);
+      --cn-input: rgba(255, 255, 255, .08);
+      --cn-chip: rgba(255, 255, 255, .10);
+    }
+  }
+  * { border-color: var(--cn-border); }
+  body {
+    @apply min-h-screen font-['DM_Sans'] antialiased;
+    color: var(--cn-text);
+    background-image: var(--cn-bg);
+  }
+  h1, h2 { font-family: 'Playfair Display', serif; }
+}
+
+@layer components {
+  .bg-warm-app {
+    background-image: var(--cn-bg);
+    color: var(--cn-text);
+  }
+  .bg-coral-gradient { background-image: linear-gradient(135deg, #fb7185, #fb7268, #fb923c); }
+  .glass {
+    border: 1px solid var(--cn-border);
+    background: var(--cn-card);
+    color: var(--cn-text);
+    box-shadow: 0 18px 45px rgba(244, 114, 98, 0.16);
+    backdrop-filter: blur(24px);
+  }
+  .input {
+    @apply w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2;
+    background: var(--cn-input);
+    border-color: var(--cn-border);
+    color: var(--cn-text);
+    --tw-ring-color: #ffc3b6;
+  }
+  .input::placeholder { color: var(--cn-soft); opacity: .78; }
+  .label { @apply mb-2 block text-sm font-semibold; color: var(--cn-muted); }
+  .error { @apply mt-1.5 text-sm text-rose-500; }
+  .btn-primary {
+    @apply flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-400 to-orange-400 px-5 py-3 font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+    box-shadow: 0 18px 45px rgba(244, 114, 98, 0.22);
+  }
+  .btn-secondary {
+    @apply rounded-2xl border bg-white px-5 py-3 font-semibold transition;
+    border-color: var(--cn-border);
+    color: #f05b56;
+    box-shadow: 0 18px 45px rgba(244, 114, 98, 0.16);
+  }
+  .btn-secondary:hover { background: #fff1ed; }
+  .card {
+    border: 1px solid var(--cn-border);
+    background: var(--cn-card);
+    color: var(--cn-text);
+    border-radius: 2rem;
+    box-shadow: 0 18px 45px rgba(244, 114, 98, 0.16);
+  }
+}
+
+@layer utilities {
+  html[data-theme-mode="dark"] .bg-white,
+  html[data-theme-mode="dark"] .bg-white\/75,
+  html[data-theme-mode="dark"] .bg-white\/80,
+  html[data-theme-mode="dark"] .bg-white\/85,
+  html[data-theme-mode="dark"] .bg-white\/90,
+  html[data-theme-mode="dark"] .bg-white\/95,
+  html[data-theme-mode="dark"] .bg-white\/\[\.03\],
+  html[data-theme-mode="dark"] .bg-white\/\[\.04\],
+  html[data-theme-mode="dark"] .bg-white\/\[\.045\],
+  html[data-theme-mode="dark"] .bg-white\/\[\.06\],
+  html[data-theme-mode="dark"] .bg-orange-50\/60,
+  html[data-theme-mode="dark"] .bg-coral-50,
+  html[data-theme-mode="dark"] .bg-rose-100 {
+    background-color: var(--cn-card-solid) !important;
+  }
+  html[data-theme-mode="dark"] .text-slate-800,
+  html[data-theme-mode="dark"] .text-slate-900,
+  html[data-theme-mode="dark"] .text-slate-700,
+  html[data-theme-mode="dark"] .text-slate-600 {
+    color: var(--cn-text) !important;
+  }
+  html[data-theme-mode="dark"] .text-slate-500,
+  html[data-theme-mode="dark"] .text-slate-400 {
+    color: var(--cn-muted) !important;
+  }
+  html[data-theme-mode="dark"] .border-slate-100,
+  html[data-theme-mode="dark"] .border-coral-100 {
+    border-color: var(--cn-border) !important;
+  }
+  html[data-theme-mode="dark"] .shadow-soft { box-shadow: 0 18px 50px rgba(0, 0, 0, .28) !important; }
+
+  html:not([data-theme-mode="dark"]) .text-white\/25,
+  html:not([data-theme-mode="dark"]) .text-white\/30,
+  html:not([data-theme-mode="dark"]) .text-white\/35,
+  html:not([data-theme-mode="dark"]) .text-white\/40,
+  html:not([data-theme-mode="dark"]) .text-white\/45,
+  html:not([data-theme-mode="dark"]) .text-white\/50,
+  html:not([data-theme-mode="dark"]) .text-white\/55,
+  html:not([data-theme-mode="dark"]) .text-white\/60,
+  html:not([data-theme-mode="dark"]) .text-white\/70,
+  html:not([data-theme-mode="dark"]) .text-white\/75 {
+    color: var(--cn-muted) !important;
+  }
+  html:not([data-theme-mode="dark"]) .text-pink-300,
+  html:not([data-theme-mode="dark"]) .text-pink-200 {
+    color: #db2777 !important;
+  }
+  html:not([data-theme-mode="dark"]) .bg-white\/\[\.03\],
+  html:not([data-theme-mode="dark"]) .bg-white\/\[\.04\],
+  html:not([data-theme-mode="dark"]) .bg-white\/\[\.045\],
+  html:not([data-theme-mode="dark"]) .bg-white\/\[\.06\] {
+    background-color: rgba(255, 255, 255, .92) !important;
+  }
+}
