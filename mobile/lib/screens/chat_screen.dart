@@ -78,7 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> pickMedia() async {
-    final result = await FilePicker.platform.pickFiles(allowMultiple: true, type: FileType.any);
+    final result = await FilePicker.pickFiles(allowMultiple: true, type: FileType.any);
     final paths = result?.files.map((f) => f.path).whereType<String>().toList() ?? [];
     if (paths.isEmpty) return;
     setState(() => sending = true);
