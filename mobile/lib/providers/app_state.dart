@@ -121,9 +121,11 @@ class AppState extends ChangeNotifier {
   Future<void> saveInterests(List<String> interests) => api.dio.post('/profile/interests', data: {'interests': interests}).then((_) {});
   Future<void> updateProfile(Map<String, dynamic> data) => api.dio.put('/profile/update', data: data).then((_) {});
 
-  Future<List<Profile>> discovery({int page = 1, int ageMin = 18, int ageMax = 60, String? gender}) async {
+  Future<List<Profile>> discovery({int page = 1, int ageMin = 18, int ageMax = 60, String? gender, String mode = 'for-you', String myZodiac = 'Sagittarius', String compatibility = 'all'}) async {
     final res = await api.dio.get('/discovery', queryParameters: {
-      'page': page, 'limit': 20, 'ageMin': ageMin, 'ageMax': ageMax,
+      'page': page, 'limit': 20, 'ageMin': ageMin, 'ageMax': ageMax, 'mode': mode,
+      if (mode == 'astrology') 'myZodiac': myZodiac,
+      if (mode == 'astrology') 'compatibility': compatibility,
       if (gender != null && gender.isNotEmpty) 'gender': gender,
       if (verifiedOnlyBrowsing) 'verifiedOnly': true,
     });
@@ -134,6 +136,12 @@ class AppState extends ChangeNotifier {
   Future<void> swipe(String userId, String action) => api.dio.post('/swipe', data: {'toUser': userId, 'action': action}).then((_) {});
   Future<void> rewind() => api.dio.delete('/swipe/rewind').then((_) {});
   Future<void> sendRequest(String userId) => api.dio.post('/connections', data: {'toUser': userId}).then((_) {});
+  Future<Map<String, dynamic>> doubleDateGroup() async => Map<String, dynamic>.from((await api.dio.get('/features/double-date')).data);
+  Future<Map<String, dynamic>> saveDoubleDateGroup(Map<String, dynamic> data) async => Map<String, dynamic>.from((await api.dio.put('/features/double-date', data: data)).data);
+  Future<Map<String, dynamic>> createMatchmakerSession() async => Map<String, dynamic>.from((await api.dio.post('/features/matchmaker')).data);
+  Future<Map<String, dynamic>> matchmakerSession() async => Map<String, dynamic>.from((await api.dio.get('/features/matchmaker')).data);
+  Future<Map<String, dynamic>> datePlans() async => Map<String, dynamic>.from((await api.dio.get('/features/date-plans')).data);
+  Future<Map<String, dynamic>> createDatePlan(Map<String, dynamic> data) async => Map<String, dynamic>.from((await api.dio.post('/features/date-plans', data: data)).data);
 
   Future<Map<String, dynamic>> requests() async => Map<String, dynamic>.from((await api.dio.get('/connections')).data);
   Future<Map<String, dynamic>> respondRequest(String id, String status) async => Map<String, dynamic>.from((await api.dio.put('/connections/$id', data: {'status': status})).data);

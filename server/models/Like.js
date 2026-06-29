@@ -22,5 +22,7 @@ const likeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 likeSchema.index({ fromUser: 1, toUser: 1 }, { unique: true });
+likeSchema.index({ toUser: 1, status: 1, createdAt: -1 });
+likeSchema.index({ fromUser: 1, status: 1, createdAt: -1 });
 
 export default mongoose.model('Like', likeSchema);

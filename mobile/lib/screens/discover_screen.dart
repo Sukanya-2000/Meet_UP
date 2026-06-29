@@ -18,11 +18,25 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String? error;
   RangeValues ages = const RangeValues(18, 60);
   String gender = '';
+  String mode = 'for-you';
+  String myZodiac = 'Sagittarius';
+  String compatibility = 'all';
+  final modes = const [
+    ['for-you', 'For You'],
+    ['online-now', 'Online'],
+    ['verified-only', 'Verified'],
+    ['new-members', 'New'],
+    ['astrology', 'Astrology'],
+    ['music', 'Music'],
+    ['double-date', 'Double Date'],
+    ['matchmaker', 'Matchmaker'],
+    ['share-date', 'Share Date'],
+  ];
   @override
   void initState() { super.initState(); refresh(); }
   Future<void> refresh() async {
     setState(() => loading = true);
-    try { profiles = await context.read<AppState>().discovery(ageMin: ages.start.round(), ageMax: ages.end.round(), gender: gender); error = null; }
+    try { profiles = await context.read<AppState>().discovery(ageMin: ages.start.round(), ageMax: ages.end.round(), gender: gender, mode: mode, myZodiac: myZodiac, compatibility: compatibility); error = null; }
     catch (e) { error = '$e'; }
     if (mounted) setState(() => loading = false);
   }
@@ -99,6 +113,48 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           Text('Discovery', style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900)),
           IconButton(onPressed: filters, icon: const Icon(Icons.tune)),
         ]),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: modes.map((item) {
+            final active = mode == item[0];
+            return Padding(
+              padding: const EdgeInsets.only(right: 8, bottom: 12),
+              child: ChoiceChip(
+                selected: active,
+                label: Text(item[1]),
+                onSelected: (_) async {
+                  setState(() => mode = item[0]);
+                  await refresh();
+                },
+              ),
+            );
+          }).toList()),
+        ),
+        if (mode == 'astrology') Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(children: [
+              Expanded(child: DropdownButtonFormField<String>(
+                initialValue: myZodiac,
+                decoration: const InputDecoration(labelText: 'Your sign'),
+                items: const ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'].map((sign) => DropdownMenuItem(value: sign, child: Text(sign))).toList(),
+                onChanged: (value) async { if (value == null) return; setState(() => myZodiac = value); await refresh(); },
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: DropdownButtonFormField<String>(
+                initialValue: compatibility,
+                decoration: const InputDecoration(labelText: 'Compatibility'),
+                items: const [
+                  DropdownMenuItem(value: 'all', child: Text('All profiles')),
+                  DropdownMenuItem(value: 'medium', child: Text('Strong vibe+')),
+                  DropdownMenuItem(value: 'high', child: Text('Cosmic match')),
+                ],
+                onChanged: (value) async { if (value == null) return; setState(() => compatibility = value); await refresh(); },
+              )),
+            ]),
+          ),
+        ),
         if (error != null) Text(error!, style: const TextStyle(color: Colors.red)),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator())),
         if (!loading && p == null) const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('You are all caught up.'))),
@@ -138,12 +194,19 @@ class _SwipeBackground extends StatelessWidget {
       );
 }
 
-class _ProfileCard extends StatelessWidget {
+class _ProfileCard extends StatefulWidget {
   const _ProfileCard({required this.profile});
   final Profile profile;
   @override
+  State<_ProfileCard> createState() => _ProfileCardState();
+}
+
+class _ProfileCardState extends State<_ProfileCard> {
+  int photoIndex = 0;
+  @override
   Widget build(BuildContext context) {
-    final photo = profile.photos.isNotEmpty ? profile.photos.first.url : '';
+    final profile = widget.profile;
+    final photo = profile.photos.isNotEmpty ? profile.photos[photoIndex].url : '';
     return Container(
       height: 560,
       decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(34), boxShadow: [BoxShadow(color: AppTheme.coral.withValues(alpha: .18), blurRadius: 30)]),
@@ -151,6 +214,11 @@ class _ProfileCard extends StatelessWidget {
       child: Stack(children: [
         Positioned.fill(child: photo.isEmpty ? const Icon(Icons.person, size: 120) : Image.network(ApiClient.instance.absoluteUrl(photo), fit: BoxFit.cover)),
         Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withValues(alpha: .78)])))),
+        if (profile.photos.length > 1) Positioned(left: 12, right: 12, top: 12, child: Row(children: List.generate(profile.photos.length, (index) => Expanded(child: Container(height: 4, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(color: index == photoIndex ? Colors.white : Colors.white38, borderRadius: BorderRadius.circular(4))))))),
+        if (profile.photos.length > 1) Positioned(left: 0, right: 0, top: 30, height: 260, child: Row(children: [
+          Expanded(child: Semantics(button: true, label: 'Previous photo', child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: () => setState(() => photoIndex = (photoIndex - 1).clamp(0, profile.photos.length - 1))))),
+          Expanded(child: Semantics(button: true, label: 'Next photo', child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: () => setState(() => photoIndex = (photoIndex + 1).clamp(0, profile.photos.length - 1))))),
+        ])),
         Positioned(left: 24, right: 24, bottom: 112, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5), decoration: BoxDecoration(color: profile.isOnline ? const Color(0xFFDFFFF0) : Colors.white70, borderRadius: BorderRadius.circular(20)), child: Text(profile.isOnline ? 'Active' : 'Offline', style: TextStyle(color: profile.isOnline ? const Color(0xFF087A45) : Colors.black54, fontWeight: FontWeight.w800))),
           const SizedBox(height: 8),

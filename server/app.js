@@ -21,6 +21,7 @@ import safetyRoutes from './routes/safety.routes.js';
 import likesRoutes from './routes/likes.routes.js';
 import conversationRoutes from './routes/conversation.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import featureRoutes from './routes/feature.routes.js';
 import { stripeWebhook } from './controllers/payment.controller.js';
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 import { sanitizeInput } from './middleware/security.middleware.js';
@@ -72,6 +73,7 @@ app.use('/api/verifications', verificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/safety', safetyRoutes);
 app.use('/api/likes', likesRoutes);
+app.use('/api/features', featureRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

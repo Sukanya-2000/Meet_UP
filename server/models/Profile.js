@@ -46,6 +46,95 @@ const profileSchema = new mongoose.Schema({
     type: String,
     enum: ['Coffee', 'Travel', 'Fitness', 'Movies', 'Music', 'Books', 'Photography', 'Gaming'],
   }],
+  openTo: [{
+    type: String,
+    trim: true,
+    maxlength: 40,
+  }],
+  languages: [{
+    type: String,
+    trim: true,
+    maxlength: 40,
+  }],
+  zodiac: {
+    type: String,
+    enum: ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces', ''],
+    default: '',
+  },
+  education: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  familyPlans: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  communicationStyle: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  loveStyle: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  pets: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  drinking: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  smoking: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  workout: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  socialMedia: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  astrology: {
+    sun: { type: String, default: '' },
+    moon: { type: String, default: '' },
+    rising: { type: String, default: '' },
+    birthTime: { type: String, default: '' },
+    birthPlace: { type: String, default: '' },
+    completedAt: { type: Date, default: null },
+  },
+  music: {
+    anthem: { type: String, trim: true, maxlength: 120, default: '' },
+    topArtists: [{ type: String, trim: true, maxlength: 80 }],
+    topGenres: [{ type: String, trim: true, maxlength: 60 }],
+    provider: { type: String, enum: ['manual', 'spotify', ''], default: 'manual' },
+    connectedAt: { type: Date, default: null },
+  },
+  modeEligibility: {
+    doubleDate: { type: Boolean, default: true, index: true },
+    matchmaker: { type: Boolean, default: true, index: true },
+    shareDate: { type: Boolean, default: true, index: true },
+  },
   isVerified: {
     type: Boolean,
     default: false,
@@ -70,5 +159,13 @@ const profileSchema = new mongoose.Schema({
     cleanStanding: { type: Boolean, default: true },
   },
 }, { timestamps: true });
+
+profileSchema.index({ gender: 1, dob: 1, isVerified: 1 });
+profileSchema.index({ boostedUntil: -1, updatedAt: -1 });
+profileSchema.index({ createdAt: -1 });
+profileSchema.index({ interests: 1 });
+profileSchema.index({ zodiac: 1 });
+profileSchema.index({ 'music.topArtists': 1 });
+profileSchema.index({ 'music.topGenres': 1 });
 
 export default mongoose.model('Profile', profileSchema);

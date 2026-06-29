@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
     default: false,
     index: true,
   },
+  demoOnline: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
 }, { timestamps: true });
 
 userSchema.pre('save', async function hashPassword(next) {

@@ -21,5 +21,6 @@ const swipeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 swipeSchema.index({ fromUser: 1, toUser: 1 }, { unique: true });
+swipeSchema.index({ fromUser: 1, createdAt: -1 });
 
 export default mongoose.model('Swipe', swipeSchema);

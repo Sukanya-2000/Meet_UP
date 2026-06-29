@@ -1,5 +1,5 @@
-import { Camera, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
-import SafetyActions from './SafetyActions';
+import { Camera, Heart, Home, MapPin, ShieldCheck, X } from 'lucide-react';
+import { useState } from 'react';
 
 const ageFromDob = (dob) => {
   const born = new Date(dob);
@@ -9,32 +9,94 @@ const ageFromDob = (dob) => {
   return age;
 };
 
-export default function SwipeCard({ profile, motion, onConnect, requestState, onBlocked }) {
-  const main = profile.photos?.find((photo) => photo.isMain) || profile.photos?.[0];
+export default function SwipeCard({ profile, motion, onPass, onLike }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const orderedPhotos = [...(profile.photos || [])].sort((a, b) => Number(b.isMain) - Number(a.isMain));
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const main = orderedPhotos[photoIndex];
+  const distance = profile.distanceKm ?? 3;
+  const isOnline = !!profile.isOnline;
+  const details = [
+    profile.zodiac,
+    profile.education,
+    profile.communicationStyle,
+    profile.loveStyle,
+    profile.pets,
+  ].filter(Boolean);
+  const badges = profile.modeBadges?.length ? profile.modeBadges : details;
+
   return (
-    <article className={`absolute inset-0 overflow-hidden rounded-[2rem] border border-coral-100 bg-white shadow-soft transition-all duration-300 ${motion === 'left' ? '-translate-x-[130%] -rotate-12 opacity-0' : motion === 'right' ? 'translate-x-[130%] rotate-12 opacity-0' : motion === 'up' ? '-translate-y-[130%] scale-105 opacity-0' : ''}`}>
-      <div className="absolute right-4 top-4 z-20"><SafetyActions userId={profile.userId} onBlocked={onBlocked} /></div>
-      <div className="relative h-[62%] overflow-hidden rounded-b-[2rem]">
-        {main ? <img src={main.imageUrl} alt={profile.firstName} className="h-full w-full object-cover" /> : <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-coral-100 to-orange-100 text-coral-300"><Camera size={52} /><p className="mt-3">No photo yet</p></div>}
-        <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-coral-500 shadow-soft"><Sparkles size={12} className="mr-1 inline" /> New here</div>
-        <div className="absolute right-4 top-4 rounded-full bg-slate-900/45 px-3 py-1 text-xs font-bold text-white backdrop-blur">1/6</div>
-      </div>
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-3xl font-bold text-slate-800">{profile.firstName}, {ageFromDob(profile.dob)}</h2>
-              {profile.isVerified && <ShieldCheck size={18} className="text-coral-400" fill="currentColor" />}
-            </div>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500"><MapPin size={15} /> {profile.city} · 3 km away</p>
+    <article className={`absolute inset-0 overflow-hidden rounded-[2rem] border border-white/20 bg-slate-950 shadow-2xl transition-all duration-300 ${motion === 'left' ? '-translate-x-[130%] -rotate-12 opacity-0' : motion === 'right' ? 'translate-x-[130%] rotate-12 opacity-0' : ''}`}>
+      <div className="relative h-full overflow-hidden">
+        {main && !imageFailed ? (
+          <img src={main.imageUrl} alt={profile.firstName} className="h-full w-full object-cover" onError={() => setImageFailed(true)} />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-white/70">
+            <Camera size={58} />
+            <p className="mt-3">No photo yet</p>
           </div>
-          <button onClick={onConnect} disabled={requestState === 'sent'} className="rounded-full border border-coral-100 bg-white p-3 text-coral-500 shadow-soft transition hover:bg-coral-50 disabled:opacity-60">
-            {requestState === 'sent' ? '✓' : '♡'}
-          </button>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/90" />
+
+        <div className={`absolute left-5 top-5 rounded-full px-3 py-1 text-xs font-bold shadow-soft ${isOnline ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+          {isOnline ? 'Active' : 'Offline'}
         </div>
-        <p className="mt-3 line-clamp-2 text-sm text-slate-600">{profile.bio || 'Looking for real conversations and good vibes.'}</p>
-        <p className="mt-2 text-xs text-coral-500">Trust score {profile.trustScore ?? 40}/100</p>
-        {!!profile.interests?.length && <div className="mt-4 flex flex-wrap gap-2">{profile.interests.slice(0, 5).map((interest) => <span key={interest} className="rounded-full bg-coral-50 px-3 py-1.5 text-xs font-semibold text-slate-600">{interest}</span>)}</div>}
+        {!!orderedPhotos.length && (
+          <div className="absolute left-4 right-4 top-3 flex gap-1" aria-label={`Photo ${photoIndex + 1} of ${orderedPhotos.length}`}>
+            {orderedPhotos.map((photo, index) => (
+              <span key={photo._id || photo.imageUrl} className={`h-1 flex-1 rounded-full shadow ${index === photoIndex ? 'bg-white' : 'bg-white/40'}`} />
+            ))}
+          </div>
+        )}
+        <div className="absolute right-5 top-7 rounded-full bg-black/45 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+          {photoIndex + 1}/{Math.max(orderedPhotos.length, 1)}
+        </div>
+
+        {orderedPhotos.length > 1 && (
+          <div className="absolute inset-x-0 top-12 flex h-[48%]" aria-label="Browse profile photos">
+            <button className="h-full w-1/2 cursor-w-resize" onClick={() => setPhotoIndex((index) => Math.max(0, index - 1))} aria-label="Previous photo" />
+            <button className="h-full w-1/2 cursor-e-resize" onClick={() => setPhotoIndex((index) => Math.min(orderedPhotos.length - 1, index + 1))} aria-label="Next photo" />
+          </div>
+        )}
+
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+          <div className="mb-6 flex items-center justify-center gap-28">
+            <button
+              onClick={onPass}
+              className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-black/45 text-rose-400 shadow-2xl backdrop-blur transition hover:scale-105"
+              title="Dislike"
+            >
+              <X size={36} strokeWidth={3} />
+            </button>
+            <button
+              onClick={onLike}
+              className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-black/45 text-emerald-300 shadow-2xl backdrop-blur transition hover:scale-105"
+              title="Like"
+            >
+              <Heart size={34} fill="currentColor" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <h2 className="text-4xl font-bold">{profile.firstName}, {ageFromDob(profile.dob)}</h2>
+            {profile.isVerified && <ShieldCheck size={22} className="text-sky-300" fill="currentColor" />}
+          </div>
+          <p className="mt-3 flex items-center gap-2 text-base text-white/90"><Home size={18} /> Lives in {profile.city}</p>
+          <p className="mt-2 flex items-center gap-2 text-base text-white/90"><MapPin size={18} /> {distance} km away</p>
+          <p className="mt-4 line-clamp-2 text-sm leading-relaxed text-white/75">{profile.bio || 'Looking for real conversations and good vibes.'}</p>
+
+          {!!profile.interests?.length && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {profile.interests.slice(0, 4).map((interest) => <span key={interest} className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">{interest}</span>)}
+            </div>
+          )}
+          {!!badges.length && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {badges.slice(0, 4).map((item) => <span key={item} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur">{item}</span>)}
+            </div>
+          )}
+        </div>
       </div>
     </article>
   );
