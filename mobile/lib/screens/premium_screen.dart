@@ -16,6 +16,7 @@ class PremiumScreen extends StatefulWidget {
 class _PremiumScreenState extends State<PremiumScreen> {
   Map<String, dynamic>? sub;
   DateTime? nextBoostAt;
+  int boostsRemaining = 0;
   Timer? timer;
 
   @override
@@ -34,15 +35,19 @@ class _PremiumScreenState extends State<PremiumScreen> {
   Future<void> load() async {
     try {
       sub = await context.read<AppState>().subscription();
-      final boost = sub?['nextBoostAt'] ?? sub?['subscription']?['nextBoostAt'];
+      final boost = sub?['boostedUntil'] ?? sub?['nextBoostAt'] ?? sub?['subscription']?['boostedUntil'] ?? sub?['subscription']?['nextBoostAt'];
       nextBoostAt = boost == null ? null : DateTime.tryParse('$boost');
+      final remaining = sub?['boostsRemaining'] ?? sub?['subscription']?['boostsRemaining'];
+      boostsRemaining = remaining is num ? remaining.toInt() : 0;
     } catch (_) {}
     if (mounted) setState(() {});
   }
 
-  bool get canBoost => nextBoostAt == null || DateTime.now().isAfter(nextBoostAt!);
+  bool get boostActive => nextBoostAt != null && DateTime.now().isBefore(nextBoostAt!);
+  bool get canBoost => boostsRemaining > 0 && !boostActive;
   String get boostLabel {
-    if (canBoost) return 'Boost profile';
+    if (boostsRemaining <= 0) return '0 boosts left';
+    if (!boostActive) return 'Boost profile';
     final left = nextBoostAt!.difference(DateTime.now());
     final mm = left.inMinutes.remainder(60).toString().padLeft(2, '0');
     final ss = left.inSeconds.remainder(60).toString().padLeft(2, '0');
@@ -83,12 +88,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
           child: ListTile(
             leading: const Icon(Icons.bolt),
             title: Text(boostLabel),
-            subtitle: const Text('Boost can be used once every 30 minutes.'),
+            subtitle: Text('$boostsRemaining boosts remaining${boostActive ? ' • Profile currently boosted' : ''}'),
             trailing: FilledButton(
               onPressed: canBoost
                   ? () async {
-                      await context.read<AppState>().boost();
-                      nextBoostAt = DateTime.now().add(const Duration(minutes: 30));
+                      final result = await context.read<AppState>().boost();
+                      final remaining = result['boostsRemaining'];
+                      boostsRemaining = remaining is num ? remaining.toInt() : boostsRemaining - 1;
+                      nextBoostAt = DateTime.tryParse('${result['boostedUntil'] ?? ''}');
                       setState(() {});
                     }
                   : null,

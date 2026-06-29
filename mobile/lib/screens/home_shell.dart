@@ -8,6 +8,7 @@ import 'liked_you_screen.dart';
 import 'premium_screen.dart';
 import 'profile_screen.dart';
 import 'requests_screen.dart';
+import 'safety_screen.dart';
 import 'settings_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -18,28 +19,43 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int index = 0;
-  final screens = const [DiscoverScreen(), RequestsScreen(), ConnectionsScreen(), LikedYouScreen(), PremiumScreen(), ProfileScreen(), SettingsScreen()];
+  final screens = const [DiscoverScreen(), RequestsScreen(), ConnectionsScreen(), LikedYouScreen(), PremiumScreen(), ProfileScreen(), SafetyScreen(), SettingsScreen()];
+  static const destinations = [
+    (Icons.explore_outlined, 'Discover'),
+    (Icons.group_add_outlined, 'Requests'),
+    (Icons.chat_bubble_outline, 'Chats'),
+    (Icons.favorite_border, 'Likes'),
+    (Icons.workspace_premium_outlined, 'Premium'),
+    (Icons.person_outline, 'Profile'),
+    (Icons.shield_outlined, 'Safety Center'),
+    (Icons.settings_outlined, 'Settings'),
+  ];
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: AppTheme.pageGradient(context),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(backgroundColor: Theme.of(context).cardColor.withOpacity(.78), title: const BrandLogo(small: true), elevation: 0),
-        body: screens[index],
-        bottomNavigationBar: NavigationBar(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Theme.of(context).cardColor.withValues(alpha: .78),
+          title: const BrandLogo(small: true),
+          elevation: 0,
+          actions: [Builder(builder: (context) => IconButton(icon: const Icon(Icons.menu), tooltip: 'Open menu', onPressed: () => Scaffold.of(context).openEndDrawer()))],
+        ),
+        endDrawer: NavigationDrawer(
           selectedIndex: index,
-          onDestinationSelected: (value) => setState(() => index = value),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.explore_outlined), label: 'Discover'),
-            NavigationDestination(icon: Icon(Icons.group_add_outlined), label: 'Requests'),
-            NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Chats'),
-            NavigationDestination(icon: Icon(Icons.favorite_border), label: 'Likes'),
-            NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Premium'),
-            NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
-            NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
+          onDestinationSelected: (value) {
+            setState(() => index = value);
+            Navigator.pop(context);
+          },
+          children: [
+            const Padding(padding: EdgeInsets.fromLTRB(24, 28, 16, 14), child: BrandLogo()),
+            const Divider(),
+            for (final destination in destinations) NavigationDrawerDestination(icon: Icon(destination.$1), label: Text(destination.$2)),
           ],
         ),
+        body: screens[index],
       ),
     );
   }

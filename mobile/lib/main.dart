@@ -20,10 +20,10 @@ class CyberNestApp extends StatelessWidget {
       child: Consumer<AppState>(
         builder: (context, app, _) => MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'CyberNest',
-          themeMode: app.themeMode,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
+          title: 'MeetUp',
+          themeMode: app.appearanceMode,
+          theme: AppTheme.forStyle(app.selectedTheme),
+          darkTheme: AppTheme.forStyle(app.selectedTheme, brightness: Brightness.dark),
           home: const SplashScreen(),
         ),
       ),

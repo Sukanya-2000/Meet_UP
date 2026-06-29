@@ -1,5 +1,5 @@
 class Profile {
-  Profile({required this.userId, required this.firstName, this.city = '', this.dob, this.bio = '', this.interests = const [], this.photos = const [], this.isVerified = false});
+  Profile({required this.userId, required this.firstName, this.city = '', this.dob, this.bio = '', this.interests = const [], this.photos = const [], this.isVerified = false, this.isOnline = false});
   final String userId;
   final String firstName;
   final String city;
@@ -8,6 +8,7 @@ class Profile {
   final List<String> interests;
   final List<Photo> photos;
   final bool isVerified;
+  final bool isOnline;
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
         userId: '${json['userId'] ?? json['_id'] ?? ''}',
@@ -18,7 +19,21 @@ class Profile {
         interests: (json['interests'] as List? ?? []).map((e) => '$e').toList(),
         photos: (json['photos'] as List? ?? []).map((e) => Photo.fromJson(Map<String, dynamic>.from(e))).toList(),
         isVerified: json['isVerified'] == true,
+        isOnline: json['isOnline'] == true,
       );
+
+  String get westernZodiac {
+    final d = DateTime.tryParse(dob ?? '');
+    if (d == null) return '';
+    final v = d.month * 100 + d.day;
+    if (v >= 321 && v <= 419) return 'Aries';
+    if (v <= 520) return 'Taurus'; if (v <= 620) return 'Gemini';
+    if (v <= 722) return 'Cancer'; if (v <= 822) return 'Leo';
+    if (v <= 922) return 'Virgo'; if (v <= 1022) return 'Libra';
+    if (v <= 1121) return 'Scorpio'; if (v <= 1221) return 'Sagittarius';
+    if (v >= 1222 || v <= 119) return 'Capricorn';
+    if (v <= 218) return 'Aquarius'; return 'Pisces';
+  }
 }
 
 class Photo {

@@ -5,6 +5,7 @@ import Swipe from '../models/Swipe.js';
 import Like from '../models/Like.js';
 import { isPremium } from '../services/subscription.service.js';
 import Block from '../models/Block.js';
+import { isUserOnline } from '../socket/index.js';
 
 export const getDiscovery = async (req, res) => {
   const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
@@ -57,6 +58,7 @@ export const getDiscovery = async (req, res) => {
   const photos = await Photo.find({ userId: { $in: profiles.map((profile) => profile.userId) } }).sort({ orderIndex: 1 });
   const data = profiles.map((profile) => ({
     ...profile,
+    isOnline: isUserOnline(profile.userId),
     photos: photos.filter((photo) => photo.userId.equals(profile.userId)),
   }));
 

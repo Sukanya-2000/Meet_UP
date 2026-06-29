@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api_client.dart';
+import '../core/app_theme.dart';
 import '../core/socket_service.dart';
 import '../models/cyber_models.dart';
 
@@ -15,7 +16,11 @@ class AppState extends ChangeNotifier {
   Map<String, dynamic>? user;
   bool booted = false;
   bool loading = false;
-  ThemeMode themeMode = ThemeMode.system;
+  CyberTheme selectedTheme = CyberTheme.sunset;
+  ThemeMode appearanceMode = ThemeMode.system;
+  bool showOnlineStatus = true;
+  bool readReceipts = true;
+  bool verifiedOnlyBrowsing = false;
 
   bool get loggedIn => token != null;
   String get userId => '${user?['id'] ?? user?['_id'] ?? ''}';
@@ -24,17 +29,55 @@ class AppState extends ChangeNotifier {
     await api.init();
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('token');
-    final mode = prefs.getString('theme') ?? 'system';
-    themeMode = mode == 'dark' ? ThemeMode.dark : mode == 'light' ? ThemeMode.light : ThemeMode.system;
-    if (token != null) sockets.connect(token!);
+    final savedTheme = prefs.getString('cyber_theme') ?? 'sunset';
+    selectedTheme = CyberTheme.values.firstWhere((theme) => theme.name == savedTheme, orElse: () => CyberTheme.sunset);
+    final appearance = prefs.getString('appearance') ?? 'system';
+    appearanceMode = appearance == 'dark' ? ThemeMode.dark : appearance == 'light' ? ThemeMode.light : ThemeMode.system;
+    showOnlineStatus = prefs.getBool('show_online_status') ?? true;
+    readReceipts = prefs.getBool('read_receipts') ?? true;
+    verifiedOnlyBrowsing = prefs.getBool('verified_only_browsing') ?? false;
+    if (token != null && showOnlineStatus) sockets.connect(token!);
     booted = true;
     notifyListeners();
   }
 
-  Future<void> setTheme(ThemeMode mode) async {
-    themeMode = mode;
+  Future<void> setTheme(CyberTheme theme) async {
+    selectedTheme = theme;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme', mode == ThemeMode.dark ? 'dark' : mode == ThemeMode.light ? 'light' : 'system');
+    await prefs.setString('cyber_theme', theme.name);
+    notifyListeners();
+  }
+
+  Future<void> setAppearance(ThemeMode mode) async {
+    appearanceMode = mode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('appearance', mode == ThemeMode.dark ? 'dark' : mode == ThemeMode.light ? 'light' : 'system');
+    notifyListeners();
+  }
+
+  Future<void> setShowOnlineStatus(bool enabled) async {
+    showOnlineStatus = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_online_status', enabled);
+    if (enabled && token != null) {
+      sockets.connect(token!);
+    } else {
+      sockets.dispose();
+    }
+    notifyListeners();
+  }
+
+  Future<void> setReadReceipts(bool enabled) async {
+    readReceipts = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('read_receipts', enabled);
+    notifyListeners();
+  }
+
+  Future<void> setVerifiedOnlyBrowsing(bool enabled) async {
+    verifiedOnlyBrowsing = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('verified_only_browsing', enabled);
     notifyListeners();
   }
 
@@ -46,7 +89,7 @@ class AppState extends ChangeNotifier {
       user = Map<String, dynamic>.from(res.data['user']);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token!);
-      sockets.connect(token!);
+      if (showOnlineStatus) sockets.connect(token!);
       return null;
     } catch (e) {
       return _message(e);
@@ -60,7 +103,7 @@ class AppState extends ChangeNotifier {
       user = Map<String, dynamic>.from(res.data['user']);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token!);
-      sockets.connect(token!);
+      if (showOnlineStatus) sockets.connect(token!);
       notifyListeners();
       return null;
     } catch (e) { return _message(e); }
@@ -78,8 +121,12 @@ class AppState extends ChangeNotifier {
   Future<void> saveInterests(List<String> interests) => api.dio.post('/profile/interests', data: {'interests': interests}).then((_) {});
   Future<void> updateProfile(Map<String, dynamic> data) => api.dio.put('/profile/update', data: data).then((_) {});
 
-  Future<List<Profile>> discovery({int page = 1}) async {
-    final res = await api.dio.get('/discovery', queryParameters: {'page': page, 'limit': 20});
+  Future<List<Profile>> discovery({int page = 1, int ageMin = 18, int ageMax = 60, String? gender}) async {
+    final res = await api.dio.get('/discovery', queryParameters: {
+      'page': page, 'limit': 20, 'ageMin': ageMin, 'ageMax': ageMax,
+      if (gender != null && gender.isNotEmpty) 'gender': gender,
+      if (verifiedOnlyBrowsing) 'verifiedOnly': true,
+    });
     return (res.data['profiles'] as List? ?? []).map((e) => Profile.fromJson(Map<String, dynamic>.from(e))).toList();
   }
 
@@ -90,8 +137,13 @@ class AppState extends ChangeNotifier {
 
   Future<Map<String, dynamic>> requests() async => Map<String, dynamic>.from((await api.dio.get('/connections')).data);
   Future<Map<String, dynamic>> respondRequest(String id, String status) async => Map<String, dynamic>.from((await api.dio.put('/connections/$id', data: {'status': status})).data);
-  Future<Map<String, dynamic>> receivedLikes() async => Map<String, dynamic>.from((await api.dio.get('/likes/received')).data);
+  Future<List<Map<String, dynamic>>> receivedLikes() async {
+    final data = (await api.dio.get('/likes/received')).data;
+    final items = data is List ? data : (data is Map ? data['likes'] ?? data['received'] ?? data['data'] ?? [] : []);
+    return (items as List).map((item) => Map<String, dynamic>.from(item)).toList();
+  }
   Future<Map<String, dynamic>> acceptLike(String id) async => Map<String, dynamic>.from((await api.dio.post('/likes/accept/$id')).data);
+  Future<void> passLike(String id) => api.dio.post('/likes/pass/$id').then((_) {});
 
   Future<List<MatchItem>> matches() async {
     final res = await api.dio.get('/matches');
@@ -104,9 +156,13 @@ class AppState extends ChangeNotifier {
 
   Future<Map<String, dynamic>> subscription() async => Map<String, dynamic>.from((await api.dio.get('/subscription/me')).data);
   Future<Map<String, dynamic>> premiumCheckout() async => Map<String, dynamic>.from((await api.dio.post('/payments/create-checkout-session')).data);
-  Future<void> boost() => api.dio.post('/premium/boost').then((_) {});
+  Future<Map<String, dynamic>> boost() async => Map<String, dynamic>.from((await api.dio.post('/premium/boost')).data);
   Future<void> report(String userId, String reason, String details, bool block) => api.dio.post('/safety/report', data: {'reportedUserId': userId, 'reason': reason, 'details': details, 'block': block}).then((_) {});
   Future<void> block(String userId) => api.dio.post('/safety/block', data: {'blockedUserId': userId}).then((_) {});
+  Future<Map<String, dynamic>> safetyTrust() async => Map<String, dynamic>.from((await api.dio.get('/safety/trust')).data);
+  Future<Map<String, dynamic>> safetyCheckIns() async => Map<String, dynamic>.from((await api.dio.get('/safety/check-ins')).data);
+  Future<void> createSafetyCheckIn(DateTime scheduledFor, String venue) => api.dio.post('/safety/check-ins', data: {'scheduledFor': scheduledFor.toUtc().toIso8601String(), 'venue': venue}).then((_) {});
+  Future<void> updateSafetyCheckIn(String id, String status) => api.dio.put('/safety/check-ins/$id', data: {'status': status}).then((_) {});
 
   String _message(Object e) {
     final data = e is DioException ? e.response?.data : null;

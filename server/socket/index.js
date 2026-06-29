@@ -7,6 +7,7 @@ import Conversation from '../models/Conversation.js';
 import { assertMatchMember } from '../services/match.service.js';
 
 const onlineUsers = new Map();
+export const isUserOnline = (userId) => onlineUsers.has(String(userId));
 
 const addSocket = (userId, socketId) => {
   const sockets = onlineUsers.get(userId) || new Set();

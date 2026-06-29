@@ -9,14 +9,15 @@ class BrandLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = small ? 34.0 : 48.0;
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(gradient: AppTheme.brandGradient, borderRadius: BorderRadius.circular(16)),
-        child: const Icon(Icons.favorite_border_rounded, color: Colors.white),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(small ? 11 : 16),
+        child: ColorFiltered(
+          colorFilter: ColorFilter.mode(Theme.of(context).colorScheme.primary.withValues(alpha: .28), BlendMode.color),
+          child: Image.asset('assets/branding/cybernest-icon.png', width: size, height: size, fit: BoxFit.cover),
+        ),
       ),
-      if (!small) const SizedBox(width: 10),
-      if (!small) const Text('CyberNest', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+      const SizedBox(width: 10),
+      Text('MeetUp', style: TextStyle(fontSize: small ? 20 : 24, fontWeight: FontWeight.w800)),
     ]);
   }
 }
@@ -36,7 +37,7 @@ class GradientButton extends StatelessWidget {
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 18),
-            decoration: BoxDecoration(gradient: AppTheme.brandGradient, borderRadius: BorderRadius.circular(22), boxShadow: [BoxShadow(color: AppTheme.coral.withOpacity(.22), blurRadius: 24)]),
+            decoration: BoxDecoration(gradient: AppTheme.brandGradient, borderRadius: BorderRadius.circular(22), boxShadow: [BoxShadow(color: AppTheme.coral.withValues(alpha: .22), blurRadius: 24)]),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [if (icon != null) Icon(icon, color: Colors.white), if (icon != null) const SizedBox(width: 8), Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800))]),
           ),
         ),
@@ -50,7 +51,7 @@ class SoftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: padding,
-        decoration: BoxDecoration(color: Theme.of(context).cardColor.withOpacity(.94), borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.coral.withOpacity(.22)), boxShadow: [BoxShadow(color: AppTheme.coral.withOpacity(.12), blurRadius: 30)]),
+        decoration: BoxDecoration(color: Theme.of(context).cardColor.withValues(alpha: .94), borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.coral.withValues(alpha: .22)), boxShadow: [BoxShadow(color: AppTheme.coral.withValues(alpha: .12), blurRadius: 30)]),
         child: child,
       );
 }

@@ -51,6 +51,8 @@ class _ChatScreenState extends State<ChatScreen> {
       final data = await context.read<AppState>().messages(widget.conversationId);
       messages = (data['messages'] as List? ?? []).map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e))).toList();
       otherUserId = data['otherUserId']?.toString() ?? widget.match?.otherUserId;
+      final app = context.read<AppState>();
+      if (app.readReceipts) app.sockets.markRead(widget.conversationId);
     } catch (_) {}
     if (mounted) {
       setState(() => loading = false);
@@ -95,9 +97,10 @@ class _ChatScreenState extends State<ChatScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + MediaQuery.of(context).viewInsets.bottom),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      useSafeArea: true,
+      builder: (context) => SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(18, 18, 18, 24 + MediaQuery.of(context).viewInsets.bottom),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           const Text('Safety tools', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
           TextField(controller: details, minLines: 3, maxLines: 5, decoration: const InputDecoration(labelText: 'Report details')),
@@ -112,7 +115,7 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.shield_outlined),
             label: const Text('Submit report'),
           ),
-          TextButton.icon(
+          OutlinedButton.icon(
             onPressed: otherUserId == null
                 ? null
                 : () async {
@@ -208,7 +211,7 @@ class _Bubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: mine ? color : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(22).copyWith(bottomRight: mine ? const Radius.circular(4) : null, bottomLeft: mine ? null : const Radius.circular(4)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(.06), blurRadius: 12)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .06), blurRadius: 12)],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           for (final a in message.attachments) _AttachmentView(attachment: a),
@@ -241,7 +244,7 @@ class _AttachmentView extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(.18), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: .18), borderRadius: BorderRadius.circular(14)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         const Icon(Icons.insert_drive_file_outlined),
         const SizedBox(width: 8),

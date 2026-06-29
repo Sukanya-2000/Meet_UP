@@ -58,9 +58,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       TextField(controller: bio, maxLines: 4, decoration: const InputDecoration(labelText: 'Bio')),
       const SizedBox(height: 12),
       Row(children: [
-        Expanded(child: DropdownButtonFormField(value: gender, decoration: const InputDecoration(labelText: 'Gender'), items: ['man', 'woman', 'non-binary', 'other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (v) => setState(() => gender = v!))),
+        Expanded(child: DropdownButtonFormField(initialValue: gender, decoration: const InputDecoration(labelText: 'Gender'), items: ['man', 'woman', 'non-binary', 'other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (v) => setState(() => gender = v!))),
         const SizedBox(width: 12),
-        Expanded(child: DropdownButtonFormField(value: lookingFor, decoration: const InputDecoration(labelText: 'Looking for'), items: ['man', 'woman', 'everyone'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (v) => setState(() => lookingFor = v!))),
+        Expanded(child: DropdownButtonFormField(initialValue: lookingFor, decoration: const InputDecoration(labelText: 'Looking for'), items: ['man', 'woman', 'everyone'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (v) => setState(() => lookingFor = v!))),
       ]),
       const SizedBox(height: 18),
       Wrap(spacing: 8, runSpacing: 8, children: interests.map((i) => FilterChip(label: Text(i), selected: selected.contains(i), onSelected: (_) => setState(() => selected.contains(i) ? selected.remove(i) : selected.add(i)))).toList()),

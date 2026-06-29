@@ -12,7 +12,7 @@ class LikedYouScreen extends StatefulWidget {
 }
 
 class _LikedYouScreenState extends State<LikedYouScreen> {
-  Map<String, dynamic>? data;
+  List<Map<String, dynamic>>? data;
   String? error;
 
   @override
@@ -33,7 +33,7 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final likes = (data?['likes'] ?? data?['received'] ?? data?['data'] ?? []) as List? ?? [];
+    final likes = data ?? [];
     return RefreshIndicator(
       onRefresh: load,
       child: ListView(
@@ -46,7 +46,7 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
           if (error != null) Text(error!, style: const TextStyle(color: Colors.redAccent)),
           if (data == null && error == null) const Center(child: CircularProgressIndicator()),
           if (data != null && likes.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(28), child: Center(child: Text('No likes waiting yet.')))),
-          for (final raw in likes) _LikeCard(item: Map<String, dynamic>.from(raw), reload: load),
+          for (final item in likes) _LikeCard(item: item, reload: load),
         ],
       ),
     );
@@ -61,8 +61,9 @@ class _LikeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = Map<String, dynamic>.from(item['profile'] ?? {});
-    final photo = item['photo'] is Map ? Map<String, dynamic>.from(item['photo']) : null;
-    final image = '${photo?['imageUrl'] ?? profile['photo'] ?? ''}';
+    final rawPhoto = item['photo'] ?? profile['photo'];
+    final photo = rawPhoto is Map ? Map<String, dynamic>.from(rawPhoto) : null;
+    final image = '${photo?['imageUrl'] ?? (rawPhoto is String ? rawPhoto : '')}';
     final interests = (profile['interests'] as List? ?? []).take(4).map((e) => '$e').toList();
     return Card(
       child: Padding(
@@ -81,7 +82,10 @@ class _LikeCard extends StatelessWidget {
             IconButton(
               tooltip: 'Pass',
               icon: const Icon(Icons.close),
-              onPressed: reload,
+              onPressed: () async {
+                await context.read<AppState>().passLike('${item['likeId'] ?? item['_id']}');
+                await reload();
+              },
             ),
             FilledButton(
               onPressed: () async {
