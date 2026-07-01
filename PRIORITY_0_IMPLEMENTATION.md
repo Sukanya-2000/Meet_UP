@@ -10,4 +10,4 @@ Implemented without replacing existing CyberNest APIs or data:
 - Admin status, report, verification, and premium changes create immutable audit-log records.
 - CI validates lint, web build, API unit tests, Flutter analysis, and Flutter tests.
 
-Required production configuration: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APPLE_RECEIPT_VERIFICATION_URL`, `APPLE_RECEIPT_SECRET`, `GOOGLE_RECEIPT_VERIFICATION_URL`, and `GOOGLE_SERVICE_TOKEN`. Push/email transport credentials remain provider-specific; device registration and preferences are ready for those workers.
+Required production configuration: `STRIPE_SECRET_KEY`, `APPLE_RECEIPT_VERIFICATION_URL`, `APPLE_RECEIPT_SECRET`, `GOOGLE_RECEIPT_VERIFICATION_URL`, and `GOOGLE_SERVICE_TOKEN`. `STRIPE_WEBHOOK_SECRET` is optional, but Stripe webhook processing remains disabled until it is configured. Push/email transport credentials remain provider-specific; device registration and preferences are ready for those workers.
