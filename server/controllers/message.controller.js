@@ -2,6 +2,10 @@ import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import Match from '../models/Match.js';
 import { assertConversationMember, assertMatchMember, getMatchView } from '../services/match.service.js';
+import ModerationScan from '../models/ModerationScan.js';
+import { moderationProvider } from '../services/moderation-provider.service.js';
+import Profile from '../models/Profile.js';
+import OpeningMove from '../models/OpeningMove.js';
 
 const fileKind = (mimeType = '') => {
   if (mimeType.startsWith('image/')) return 'image';
@@ -11,7 +15,7 @@ const fileKind = (mimeType = '') => {
   return 'file';
 };
 
-const toAttachment = (file, req) => ({
+const toAttachment = (file) => ({
   url: `/uploads/chat/${file.filename}`,
   originalName: file.originalname,
   mimeType: file.mimetype,
@@ -59,7 +63,7 @@ export const getMessages = async (req, res) => {
 };
 
 export const createMessage = async (req, res) => {
-  const { matchId, conversationId, message, text } = req.body;
+  const { matchId, conversationId, message, text, openingMoveId } = req.body;
   const body = text || message;
   if (!body?.trim()) {
     res.status(400);
@@ -68,7 +72,12 @@ export const createMessage = async (req, res) => {
   const { conversation, match } = conversationId
     ? await assertConversationMember(conversationId, req.user._id)
     : await resolveConversation(matchId, req.user._id);
+  const scan = await moderationProvider.scan({ text: body, targetType: 'message' });
+  await ModerationScan.create({ userId: req.user._id, targetType: 'message', targetId: String(conversation._id), ...scan, status: scan.action === 'allow' ? 'completed' : 'queued' });
+  if (scan.action === 'warn' && req.body.confirmModerationWarning !== true) return res.status(422).json({ success: false, warning: true, categories: scan.categories, message: 'Review this message before sending.' });
   const receiverId = String(match.user1) === String(req.user._id) ? match.user2 : match.user1;
+  if (!match.firstMessageSentAt && match.firstMoveRule === 'women-first') { const sender = await Profile.findOne({ userId: req.user._id }).select('gender'); if (sender?.gender !== 'woman') { res.status(403); throw new Error('This match uses Women First messaging'); } }
+  if (!match.firstMessageSentAt && match.firstMoveRule === 'opening-move' && !(await OpeningMove.exists({ _id: openingMoveId, userId: receiverId, enabled: true, moderationStatus: 'approved' }))) { res.status(403); throw new Error('Reply to an approved Opening Move to begin'); }
   const created = await Message.create({
     matchId: match._id,
     conversationId: conversation._id,
@@ -78,6 +87,7 @@ export const createMessage = async (req, res) => {
     text: body.trim(),
     deliveredAt: null,
   });
+  if (!match.firstMessageSentAt) { match.firstMessageSentAt = new Date(); await match.save(); }
   res.status(201).json({ success: true, message: created });
 };
 

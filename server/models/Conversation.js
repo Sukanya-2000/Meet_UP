@@ -13,6 +13,8 @@ const conversationSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   }],
+  active: { type: Boolean, default: true, index: true },
+  closedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 conversationSchema.path('participants').validate(

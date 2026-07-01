@@ -5,6 +5,7 @@ import Message from '../models/Message.js';
 import User from '../models/User.js';
 import Conversation from '../models/Conversation.js';
 import { assertMatchMember } from '../services/match.service.js';
+import GroupConversation from '../models/GroupConversation.js';
 
 const onlineUsers = new Map();
 export const isUserOnline = (userId) => onlineUsers.has(String(userId));
@@ -127,6 +128,25 @@ export const initializeSocket = (httpServer) => {
         socket.to(`match:${match._id}`).to(`conversation:${conversation._id}`).emit('messages:delivered', { matchId: String(match._id), conversationId: String(conversation._id), deliveredTo: socket.userId, deliveredAt: readAt });
         socket.to(`match:${match._id}`).to(`conversation:${conversation._id}`).emit('messages:seen', { matchId: String(match._id), conversationId: String(conversation._id), readBy: socket.userId, readAt });
       } catch { /* Ignore invalid read events. */ }
+    });
+
+    socket.on('call:signal', async ({ matchId, signal }, acknowledge) => {
+      try { const match = await assertMatchMember(matchId, socket.userId); socket.to(`match:${match._id}`).emit('call:signal', { matchId: String(match._id), fromUserId: socket.userId, signal }); acknowledge?.({ success: true }); }
+      catch (error) { acknowledge?.({ success: false, error: error.message }); }
+    });
+
+    socket.on('call:state', async ({ matchId, state }) => {
+      try { const match = await assertMatchMember(matchId, socket.userId); socket.to(`match:${match._id}`).emit('call:state', { matchId: String(match._id), fromUserId: socket.userId, state }); } catch { /* Ignore invalid call state. */ }
+    });
+
+    socket.on('group:join', async ({ conversationId }, acknowledge) => {
+      const group = await GroupConversation.findOne({ _id: conversationId, participants: socket.userId, active: true });
+      if (!group) return acknowledge?.({ success: false, error: 'Group unavailable' });
+      socket.join(`group:${group._id}`); acknowledge?.({ success: true });
+    });
+    socket.on('group:typing', async ({ conversationId, active }) => {
+      const group = await GroupConversation.exists({ _id: conversationId, participants: socket.userId, active: true });
+      if (group) socket.to(`group:${conversationId}`).emit('group:typing', { conversationId, userId: socket.userId, active: Boolean(active) });
     });
 
     socket.on('disconnect', () => {

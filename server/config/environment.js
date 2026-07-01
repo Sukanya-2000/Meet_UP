@@ -1,0 +1,2 @@
+const productionRequired=['MONGO_URI','JWT_SECRET','CLIENT_URL','STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET','TOKEN_ENCRYPTION_KEY'];
+export const validateEnvironment=()=>{const missing=productionRequired.filter(key=>process.env.NODE_ENV==='production'&&!process.env[key]);if((process.env.JWT_SECRET||'').length<32)missing.push('JWT_SECRET(minimum 32 characters)');if(missing.length)throw new Error(`Missing or unsafe environment configuration: ${[...new Set(missing)].join(', ')}`);return true};

@@ -1,5 +1,5 @@
-import { Camera, Heart, Home, MapPin, ShieldCheck, X } from 'lucide-react';
-import { useState } from 'react';
+import { Camera, Heart, Home, MapPin, ShieldCheck, Star, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 const ageFromDob = (dob) => {
   const born = new Date(dob);
@@ -9,10 +9,12 @@ const ageFromDob = (dob) => {
   return age;
 };
 
-export default function SwipeCard({ profile, motion, onPass, onLike }) {
+export default function SwipeCard({ profile, motion, onPass, onLike, onSuperLike }) {
   const [imageFailed, setImageFailed] = useState(false);
   const orderedPhotos = [...(profile.photos || [])].sort((a, b) => Number(b.isMain) - Number(a.isMain));
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [dragX, setDragX] = useState(0);
+  const dragStart = useRef(null);
   const main = orderedPhotos[photoIndex];
   const distance = profile.distanceKm ?? 3;
   const isOnline = !!profile.isOnline;
@@ -24,10 +26,45 @@ export default function SwipeCard({ profile, motion, onPass, onLike }) {
     profile.pets,
   ].filter(Boolean);
   const badges = profile.modeBadges?.length ? profile.modeBadges : details;
+  const swiping = dragStart.current !== null;
+
+  const startDrag = (event) => {
+    if (motion || event.button > 0) return;
+    dragStart.current = event.clientX;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const moveDrag = (event) => {
+    if (dragStart.current === null || motion) return;
+    setDragX(event.clientX - dragStart.current);
+  };
+
+  const endDrag = () => {
+    if (dragStart.current === null) return;
+    dragStart.current = null;
+    if (Math.abs(dragX) >= 90) {
+      if (dragX > 0) onLike();
+      else onPass();
+    }
+    setDragX(0);
+  };
+
+  const motionTransform = motion === 'left'
+    ? 'translateX(-130%) rotate(-12deg)'
+    : motion === 'right'
+      ? 'translateX(130%) rotate(12deg)'
+      : `translateX(${dragX}px) rotate(${dragX / 24}deg)`;
 
   return (
-    <article className={`absolute inset-0 overflow-hidden rounded-[2rem] border border-white/20 bg-slate-950 shadow-2xl transition-all duration-300 ${motion === 'left' ? '-translate-x-[130%] -rotate-12 opacity-0' : motion === 'right' ? 'translate-x-[130%] rotate-12 opacity-0' : ''}`}>
-      <div className="relative h-full overflow-hidden">
+    <article
+      className={`absolute inset-0 touch-pan-y select-none ${motion ? 'opacity-0' : ''}`}
+      style={{ transform: motionTransform, transition: swiping ? 'none' : 'transform 300ms, opacity 300ms' }}
+      onPointerDown={startDrag}
+      onPointerMove={moveDrag}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
+      <div className="relative h-[calc(100%-88px)] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-950 shadow-2xl">
         {main && !imageFailed ? (
           <img src={main.imageUrl} alt={profile.firstName} className="h-full w-full object-cover" onError={() => setImageFailed(true)} />
         ) : (
@@ -61,23 +98,6 @@ export default function SwipeCard({ profile, motion, onPass, onLike }) {
         )}
 
         <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          <div className="mb-6 flex items-center justify-center gap-28">
-            <button
-              onClick={onPass}
-              className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-black/45 text-rose-400 shadow-2xl backdrop-blur transition hover:scale-105"
-              title="Dislike"
-            >
-              <X size={36} strokeWidth={3} />
-            </button>
-            <button
-              onClick={onLike}
-              className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-black/45 text-emerald-300 shadow-2xl backdrop-blur transition hover:scale-105"
-              title="Like"
-            >
-              <Heart size={34} fill="currentColor" />
-            </button>
-          </div>
-
           <div className="flex items-center gap-2">
             <h2 className="text-4xl font-bold">{profile.firstName}, {ageFromDob(profile.dob)}</h2>
             {profile.isVerified && <ShieldCheck size={22} className="text-sky-300" fill="currentColor" />}
@@ -97,6 +117,15 @@ export default function SwipeCard({ profile, motion, onPass, onLike }) {
             </div>
           )}
         </div>
+      </div>
+      <div className="flex h-[88px] items-center justify-center gap-10" onPointerDown={(event) => event.stopPropagation()}>
+        <button onClick={onPass} className="flex h-16 w-16 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-500 shadow-soft transition hover:scale-105" title="Dislike" aria-label="Dislike profile">
+          <X size={36} strokeWidth={3} />
+        </button>
+        <button onClick={onSuperLike} className="flex h-14 w-14 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-500 shadow-soft transition hover:-translate-y-1 hover:scale-105" title="Super Spark" aria-label="Send Super Spark"><Star size={30} fill="currentColor" /></button>
+        <button onClick={onLike} className="flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200 bg-white text-emerald-500 shadow-soft transition hover:scale-105" title="Like" aria-label="Like profile">
+          <Heart size={34} fill="currentColor" />
+        </button>
       </div>
     </article>
   );

@@ -1,0 +1,4 @@
+import mongoose from 'mongoose';
+const answerSchema = new mongoose.Schema({ questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'GameQuestion' }, userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, answer: { type: String, maxlength: 1000 }, skipped: { type: Boolean, default: false }, answeredAt: { type: Date, default: Date.now } }, { _id: false });
+const schema = new mongoose.Schema({ matchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Match', required: true, index: true }, startedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, status: { type: String, enum: ['active','completed','cancelled'], default: 'active' }, currentQuestionId: { type: mongoose.Schema.Types.ObjectId, ref: 'GameQuestion', default: null }, answers: [answerSchema], completedAt: { type: Date, default: null } }, { timestamps: true });
+export default mongoose.model('QuestionGame', schema);

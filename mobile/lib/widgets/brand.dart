@@ -17,7 +17,7 @@ class BrandLogo extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 10),
-      Text('MeetUp', style: TextStyle(fontSize: small ? 20 : 24, fontWeight: FontWeight.w800)),
+      Text('CyberNest', style: TextStyle(fontSize: small ? 20 : 24, fontWeight: FontWeight.w800)),
     ]);
   }
 }

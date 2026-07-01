@@ -36,6 +36,12 @@ const profileSchema = new mongoose.Schema({
     minlength: 2,
     maxlength: 80,
   },
+  location: {
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], default: undefined },
+    updatedAt: { type: Date, default: null },
+  },
+  locationConsentAt: { type: Date, default: null },
   bio: {
     type: String,
     trim: true,
@@ -67,6 +73,16 @@ const profileSchema = new mongoose.Schema({
     maxlength: 80,
     default: '',
   },
+  occupation: { type: String, trim: true, maxlength: 80, default: '' },
+  company: { type: String, trim: true, maxlength: 100, default: '' },
+  heightCm: { type: Number, min: 100, max: 250, default: null },
+  religion: { type: String, trim: true, maxlength: 60, default: '' },
+  politics: { type: String, trim: true, maxlength: 60, default: '' },
+  children: { type: String, enum: ['', 'have-children', 'want-children', 'dont-want-children', 'open-to-children'], default: '' },
+  relationshipIntentions: [{ type: String, enum: ['long-term', 'short-term', 'casual-dating', 'marriage', 'friendship', 'networking', 'figuring-it-out', 'open-to-exploring'] }],
+  sexualOrientations: [{ type: String, trim: true, maxlength: 50 }],
+  pronouns: [{ type: String, trim: true, maxlength: 30 }],
+  qualitiesSought: [{ type: String, trim: true, maxlength: 50 }],
   familyPlans: {
     type: String,
     trim: true,
@@ -145,6 +161,16 @@ const profileSchema = new mongoose.Schema({
     default: null,
     index: true,
   },
+  incognitoEnabled: { type: Boolean, default: false, index: true },
+  firstMovePreference: { type: String, enum: ['default','anyone','women-first','opening-move','custom'], default: 'default' },
+  snooze: { enabled: { type: Boolean, default: false, index: true }, reason: { type: String, maxlength: 120, default: '' }, startedAt: { type: Date, default: null }, endsAt: { type: Date, default: null }, pauseNotifications: { type: Boolean, default: true } },
+  verificationLevel: { type: String, enum: ['none','selfie','liveness','identity'], default: 'none', index: true },
+  travelMode: {
+    enabled: { type: Boolean, default: false }, city: { type: String, trim: true, maxlength: 80, default: '' },
+    country: { type: String, trim: true, maxlength: 80, default: '' },
+    location: { type: { type: String, enum: ['Point'], default: 'Point' }, coordinates: { type: [Number], default: undefined } },
+    expiresAt: { type: Date, default: null },
+  },
   trustScore: {
     type: Number,
     min: 0,
@@ -167,5 +193,9 @@ profileSchema.index({ interests: 1 });
 profileSchema.index({ zodiac: 1 });
 profileSchema.index({ 'music.topArtists': 1 });
 profileSchema.index({ 'music.topGenres': 1 });
+profileSchema.index({ location: '2dsphere' }, { partialFilterExpression: { 'location.coordinates': { $exists: true } } });
+profileSchema.index({ 'travelMode.expiresAt': 1, incognitoEnabled: 1 });
+profileSchema.index({ 'snooze.enabled': 1, 'snooze.endsAt': 1 });
+profileSchema.index({ gender: 1, dob: 1, incognitoEnabled: 1, 'snooze.enabled': 1, updatedAt: -1 });
 
 export default mongoose.model('Profile', profileSchema);

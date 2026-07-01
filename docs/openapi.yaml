@@ -1,0 +1,24 @@
+openapi: 3.1.0
+info: { title: CyberNest API, version: 1.2.0, description: Production API contract }
+servers: [{ url: /api }]
+components:
+  securitySchemes: { bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT } }
+  schemas:
+    Error: { type: object, required: [success, message], properties: { success: { type: boolean }, message: { type: string }, traceId: { type: string } } }
+    Auth: { type: object, properties: { token: { type: string }, refreshToken: { type: string }, expiresAt: { type: string, format: date-time }, user: { type: object } } }
+security: [{ bearerAuth: [] }]
+paths:
+  /health: { get: { security: [], responses: { '200': { description: Healthy } } } }
+  /auth/register: { post: { security: [], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [email, password], properties: { email: { type: string, format: email }, password: { type: string, minLength: 8 } } } } } }, responses: { '201': { description: Registered }, '400': { description: Invalid input } } } }
+  /auth/login: { post: { security: [], responses: { '200': { description: Authenticated }, '401': { description: Invalid credentials } } } }
+  /auth/refresh: { post: { security: [], responses: { '200': { description: Rotated session }, '401': { description: Invalid session } } } }
+  /auth/sessions: { get: { responses: { '200': { description: Active devices } } } }
+  /profile/me: { get: { responses: { '200': { description: Current profile } } } }
+  /discovery: { get: { parameters: [{ in: query, name: page, schema: { type: integer, minimum: 1 } }], responses: { '200': { description: Discovery profiles } } } }
+  /like: { post: { parameters: [{ in: header, name: Idempotency-Key, schema: { type: string } }], responses: { '201': { description: Like processed } } } }
+  /matches: { get: { responses: { '200': { description: Active matches } } } }
+  /messages/{matchId}: { get: { parameters: [{ in: path, name: matchId, required: true, schema: { type: string } }], responses: { '200': { description: Messages } } } }
+  /payments/create-checkout-session: { post: { responses: { '201': { description: Stripe checkout created } } } }
+  /notifications: { get: { responses: { '200': { description: Notification inbox } } } }
+  /enterprise/privacy/export: { post: { responses: { '200': { description: Account export } } } }
+  /enterprise/privacy/data: { delete: { responses: { '200': { description: Deletion processed } } } }

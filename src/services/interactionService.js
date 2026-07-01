@@ -1,0 +1,13 @@
+import api from './api';
+export const openingMoves = async () => (await api.get('/opening-moves')).data;
+export const createOpeningMove = async (data) => (await api.post('/opening-moves', data)).data;
+export const updateOpeningMove = async (id, data) => (await api.put(`/opening-moves/${id}`, data)).data;
+export const deleteOpeningMove = async (id) => (await api.delete(`/opening-moves/${id}`)).data;
+export const extendMatch = async (id) => (await api.post(`/lifecycle/matches/${id}/extend`)).data;
+export const rematch = async (id) => (await api.post(`/lifecycle/matches/${id}/rematch`)).data;
+export const setSnooze = async (data) => (await api.put('/lifecycle/snooze', data)).data;
+export const startCall = async (matchId, type) => (await api.post('/interactions/calls', { matchId, type })).data;
+export const updateCall = async (id, status) => (await api.put(`/interactions/calls/${id}`, { status })).data;
+export const startGame = async (matchId) => (await api.post('/interactions/games', { matchId })).data;
+export const answerGame = async (id, answer, skip = false) => (await api.post(`/interactions/games/${id}/answer`, { answer, skip })).data;
+export const transitionDate = async (id, status, note = '') => (await api.post(`/features/date-plans/${id}/status`, { status, note })).data;

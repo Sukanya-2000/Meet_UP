@@ -1,0 +1,2 @@
+import { Router } from 'express'; import { protect } from '../middleware/auth.middleware.js'; import asyncHandler from '../utils/asyncHandler.js'; import { deletePrompt, listPrompts, savePrompt, updatePrompt } from '../controllers/prompt.controller.js';
+const router = Router(); router.use(protect); router.get('/', asyncHandler(listPrompts)); router.post('/', asyncHandler(savePrompt)); router.put('/:id', asyncHandler(updatePrompt)); router.delete('/:id', asyncHandler(deletePrompt)); export default router;

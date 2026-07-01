@@ -149,7 +149,7 @@ export const enrichAndRankProfiles = ({ profiles, photos, context, isUserOnline 
         label: score >= 90 ? 'Cosmic match' : score >= 80 ? 'Strong vibe' : 'Different energy',
       },
       isOnline: Boolean(profile.user?.demoOnline) || isUserOnline(profile.userId),
-      distanceKm: Math.min(context.maximumDistance, 3 + Math.floor(Math.random() * Math.max(context.maximumDistance, 4))),
+      distanceKm: null,
       discoveryVersion: '1.2.0',
       modeBadges: [
         profile.isVerified ? 'Verified' : '',

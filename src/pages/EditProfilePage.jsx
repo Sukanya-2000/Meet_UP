@@ -24,24 +24,28 @@ const lookingOptions = [
 ];
 
 export default function EditProfilePage() {
-  const [form, setForm] = useState({ firstName: '', bio: '', city: '', gender: '', lookingFor: '', interests: [] });
+  const [form, setForm] = useState({ firstName: '', bio: '', city: '', gender: '', lookingFor: '', interests: [], occupation: '', company: '', heightCm: '', religion: '', politics: '', children: '', relationshipIntentions: [], sexualOrientations: [], pronouns: [], qualitiesSought: [] });
   const [state, setState] = useState({ loading: true, saving: false, error: '', success: '' });
+  const [prompts, setPrompts] = useState([]);
+  const [promptDraft, setPromptDraft] = useState({ category: 'about-me', prompt: '', answer: '', photoUrl: '', orderIndex: 0 });
 
   useEffect(() => {
     profileService.getMyProfile()
       .then(({ profile }) => {
-        setForm({
+        setForm((current) => ({ ...current,
           firstName: profile?.firstName || '',
           bio: profile?.bio || '',
           city: profile?.city || '',
           gender: profile?.gender || '',
           lookingFor: profile?.lookingFor || '',
           interests: profile?.interests || [],
-        });
+          occupation: profile?.occupation || '', company: profile?.company || '', heightCm: profile?.heightCm || '', religion: profile?.religion || '', politics: profile?.politics || '', children: profile?.children || '', relationshipIntentions: profile?.relationshipIntentions || [], sexualOrientations: profile?.sexualOrientations || [], pronouns: profile?.pronouns || [], qualitiesSought: profile?.qualitiesSought || [],
+        }));
         setState({ loading: false, saving: false, error: '', success: '' });
       })
       .catch((error) => setState({ loading: false, saving: false, error: getApiError(error), success: '' }));
   }, []);
+  useEffect(() => { profileService.getPrompts().then((data) => setPrompts(data.prompts || [])).catch(() => {}); }, []);
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
   const toggleInterest = (name) => update('interests', form.interests.includes(name)
@@ -59,6 +63,7 @@ export default function EditProfilePage() {
       setState({ loading: false, saving: false, error: getApiError(error), success: '' });
     }
   };
+  const addPrompt = async () => { try { const data = await profileService.savePrompt(promptDraft); setPrompts((items) => [...items.filter((item) => item.orderIndex !== data.prompt.orderIndex), data.prompt].sort((a,b) => a.orderIndex-b.orderIndex)); setPromptDraft((value) => ({ ...value, prompt: '', answer: '', photoUrl: '', orderIndex: Math.min(2, value.orderIndex + 1) })); } catch (error) { setState((value) => ({ ...value, error: getApiError(error) })); } };
 
   if (state.loading) return <div className="card mx-auto max-w-3xl p-8 text-slate-600">Loading profile...</div>;
 
@@ -81,6 +86,8 @@ export default function EditProfilePage() {
           <FormSelect label="Looking for..." options={lookingOptions} value={form.lookingFor} onChange={(event) => update('lookingFor', event.target.value)} />
         </div>
         <FormInput label="City" value={form.city} onChange={(event) => update('city', event.target.value)} />
+        <div className="grid gap-5 sm:grid-cols-2"><FormInput label="Occupation" value={form.occupation} onChange={(e) => update('occupation', e.target.value)} /><FormInput label="Company" value={form.company} onChange={(e) => update('company', e.target.value)} /><FormInput label="Height (cm)" type="number" min="100" max="250" value={form.heightCm} onChange={(e) => update('heightCm', e.target.value)} /><FormInput label="Religion" value={form.religion} onChange={(e) => update('religion', e.target.value)} /><FormInput label="Politics" value={form.politics} onChange={(e) => update('politics', e.target.value)} /><FormSelect label="Children" value={form.children} onChange={(e) => update('children', e.target.value)} options={[{value:'',label:'Prefer not to say'},{value:'have-children',label:'Have children'},{value:'want-children',label:'Want children'},{value:'dont-want-children',label:"Don't want children"},{value:'open-to-children',label:'Open to children'}]} /></div>
+        {[['relationshipIntentions','Relationship intentions'],['sexualOrientations','Orientations'],['pronouns','Pronouns'],['qualitiesSought','Qualities sought']].map(([key,label]) => <div key={key}><label className="label">{label}</label><input className="input mt-2" value={form[key].join(', ')} onChange={(e) => update(key, e.target.value.split(',').map((v) => v.trim()).filter(Boolean))} placeholder="Comma separated" /></div>)}
         <div>
           <label className="label mb-3">Interests</label>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -98,6 +105,7 @@ export default function EditProfilePage() {
           <LoadingButton type="submit" isLoading={state.saving}>Save profile</LoadingButton>
           <Link className="btn-secondary flex items-center justify-center rounded-xl px-5" to="/profile/photos">Manage photos</Link>
         </div>
+        <div className="border-t border-coral-100 pt-5"><h2 className="text-2xl">Profile prompts</h2><p className="mt-1 text-sm text-slate-500">Add up to three text or photo prompts. New edits are reviewed before public display.</p><div className="mt-4 space-y-3">{prompts.map((item) => <div key={item._id} className="rounded-2xl bg-orange-50 p-4"><p className="font-semibold">{item.prompt}</p><p className="mt-1 text-slate-600">{item.answer}</p><button type="button" className="mt-2 text-sm text-rose-500" onClick={async () => { await profileService.deletePrompt(item._id); setPrompts((values) => values.filter((value) => value._id !== item._id)); }}>Remove</button></div>)}</div>{prompts.length < 3 && <div className="mt-4 grid gap-3"><FormSelect label="Category" value={promptDraft.category} onChange={(e) => setPromptDraft({...promptDraft,category:e.target.value})} options={['about-me','values','dating','lifestyle','fun'].map((value) => ({value,label:value.replace('-',' ')}))} /><FormInput label="Prompt" value={promptDraft.prompt} onChange={(e) => setPromptDraft({...promptDraft,prompt:e.target.value})} /><FormInput label="Answer" value={promptDraft.answer} onChange={(e) => setPromptDraft({...promptDraft,answer:e.target.value})} /><FormInput label="Optional photo URL" value={promptDraft.photoUrl} onChange={(e) => setPromptDraft({...promptDraft,photoUrl:e.target.value})} /><button type="button" onClick={addPrompt} className="btn-secondary rounded-xl px-4 py-3">Add prompt</button></div>}</div>
       </form>
     </section>
   );

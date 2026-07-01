@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import AuthLayout from '../layouts/AuthLayout';
 import ProtectedRoute from './ProtectedRoute';
 import WelcomePage from '../pages/WelcomePage';
@@ -26,9 +27,13 @@ import SafetyCenterPage from '../pages/SafetyCenterPage';
 import LikedYouPage from '../pages/LikedYouPage';
 import EditProfilePage from '../pages/EditProfilePage';
 import SettingsPage from '../pages/SettingsPage';
+const AdminSettingsPage = lazy(() => import('../pages/admin/AdminSettingsPage'));
+const CommunityPage = lazy(() => import('../pages/CommunityPage'));
+const PrivacyCenterPage = lazy(() => import('../pages/PrivacyCenterPage'));
 
 export default function AppRoutes() {
   return (
+    <Suspense fallback={<div role="status" aria-live="polite" className="p-8 text-center">Loading CyberNest…</div>}>
     <Routes>
       <Route path="/" element={<WelcomePage />} />
       <Route element={<AuthLayout />}>
@@ -54,6 +59,8 @@ export default function AppRoutes() {
           <Route path="/likes-you" element={<LikesYouPage />} />
           <Route path="/liked-you" element={<LikedYouPage />} />
           <Route path="/safety" element={<SafetyCenterPage />} />
+          <Route path="/community" element={<CommunityPage />} />
+          <Route path="/privacy" element={<PrivacyCenterPage />} />
         </Route>
       </Route>
       <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -63,9 +70,11 @@ export default function AppRoutes() {
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
           <Route path="/admin/verifications" element={<AdminVerificationsPage />} />
+          <Route path="/admin/settings" element={<AdminSettingsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }

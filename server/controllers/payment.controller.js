@@ -1,6 +1,8 @@
 import Stripe from 'stripe';
 import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
+import PurchaseReceipt from '../models/PurchaseReceipt.js';
+import { listEntitlements, syncPremiumEntitlements } from '../services/entitlement.service.js';
 
 const getStripe = () => {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -11,14 +13,14 @@ const getStripe = () => {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 };
 
-const applySubscriptionState = async ({ userId, stripeCustomerId, stripeSubscriptionId, status, periodStart, periodEnd }) => {
+const applySubscriptionState = async ({ userId, stripeCustomerId, stripeSubscriptionId, status, periodStart, periodEnd, plan = 'premium' }) => {
   const active = ['active', 'trialing'].includes(status);
   const normalizedStatus = active ? 'active' : status === 'canceled' ? 'cancelled' : ['pending', 'cancelled', 'expired', 'inactive'].includes(status) ? status : 'inactive';
   const subscription = await Subscription.findOneAndUpdate(
     userId ? { userId } : { stripeSubscriptionId },
     {
       ...(userId ? { userId } : {}),
-      plan: 'premium',
+      plan,
       status: normalizedStatus,
       provider: 'stripe',
       providerSubscriptionId: stripeSubscriptionId,
@@ -33,27 +35,47 @@ const applySubscriptionState = async ({ userId, stripeCustomerId, stripeSubscrip
     { upsert: true, new: true, runValidators: true },
   );
   await User.findByIdAndUpdate(subscription.userId, { isPremium: active });
+  await syncPremiumEntitlements({ userId: subscription.userId, source: 'stripe', active, plan, expiresAt: subscription.currentPeriodEnd, metadata: { subscriptionId: stripeSubscriptionId } });
   return subscription;
+};
+
+export const getEntitlements = async (req, res) => res.json({ success: true, entitlements: await listEntitlements(req.user._id) });
+
+export const verifyStorePurchase = async (req, res) => {
+  const { provider, receipt, productId, transactionId } = req.body;
+  if (!['apple', 'google'].includes(provider) || !receipt || !productId || !transactionId) { res.status(400); throw new Error('Complete store purchase details are required'); }
+  const verificationUrl = provider === 'apple' ? process.env.APPLE_RECEIPT_VERIFICATION_URL : process.env.GOOGLE_RECEIPT_VERIFICATION_URL;
+  if (!verificationUrl) { res.status(503); throw new Error(`${provider} receipt verification is not configured`); }
+  const response = await fetch(verificationUrl, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${provider === 'apple' ? process.env.APPLE_RECEIPT_SECRET : process.env.GOOGLE_SERVICE_TOKEN}` }, body: JSON.stringify({ receipt, productId, transactionId }) });
+  if (!response.ok) { res.status(400); throw new Error('Store receipt could not be verified'); }
+  const verified = await response.json();
+  if (!verified.valid) { res.status(400); throw new Error('Store receipt is invalid'); }
+  const expiresAt = verified.expiresAt ? new Date(verified.expiresAt) : null;
+  await PurchaseReceipt.findOneAndUpdate({ provider, transactionId }, { userId: req.user._id, provider, transactionId, productId, receipt, status: 'active', expiresAt }, { upsert: true, new: true, runValidators: true });
+  await syncPremiumEntitlements({ userId: req.user._id, source: provider, active: true, expiresAt, metadata: { transactionId, productId } });
+  await User.findByIdAndUpdate(req.user._id, { isPremium: true });
+  res.json({ success: true, entitlements: await listEntitlements(req.user._id) });
 };
 
 export const createCheckoutSession = async (req, res) => {
   const stripe = getStripe();
+  const plan = ['plus','gold','platinum'].includes(req.body.plan) ? req.body.plan : 'gold';
   const baseUrl = process.env.CLIENT_URL?.split(',')[0] || 'http://localhost:5173';
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
     customer_email: req.user.email,
     client_reference_id: String(req.user._id),
-    metadata: { userId: String(req.user._id), plan: 'premium' },
-    subscription_data: { metadata: { userId: String(req.user._id), plan: 'premium' } },
+    metadata: { userId: String(req.user._id), plan },
+    subscription_data: { metadata: { userId: String(req.user._id), plan } },
     line_items: [{
       quantity: 1,
       price_data: {
         currency: 'usd',
         recurring: { interval: 'month' },
-        unit_amount: 999,
+        unit_amount: plan === 'plus' ? 699 : plan === 'platinum' ? 1499 : 999,
         product_data: {
-          name: 'CyberNest Monthly Premium',
+          name: `CyberNest ${plan[0].toUpperCase()}${plan.slice(1)} Monthly`,
           description: 'Unlimited Likes, Likes You, Advanced Filters, Verified Only Mode, and Profile Boost.',
         },
       },
@@ -68,7 +90,7 @@ export const createCheckoutSession = async (req, res) => {
     { userId: req.user._id },
     {
       userId: req.user._id,
-      plan: 'premium',
+      plan,
       status: 'pending',
       provider: 'stripe',
       stripeCheckoutSessionId: session.id,
@@ -112,6 +134,7 @@ export const confirmCheckoutSession = async (req, res) => {
     status: stripeSubscription.status,
     periodStart: stripeSubscription.current_period_start,
     periodEnd: stripeSubscription.current_period_end,
+    plan: session.metadata?.plan || 'premium',
   });
 
   subscription.stripeCheckoutSessionId = session.id;
@@ -129,10 +152,11 @@ export const stripeWebhook = async (req, res) => {
   const stripe = getStripe();
   const signature = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) { res.status(503); throw new Error('Stripe webhook verification is not configured'); }
   let event = req.body;
 
   try {
-    if (webhookSecret) event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
   } catch (error) {
     res.status(400);
     throw new Error(`Stripe webhook verification failed: ${error.message}`);
@@ -151,6 +175,7 @@ export const stripeWebhook = async (req, res) => {
         status: stripeSubscription.status,
         periodStart: stripeSubscription.current_period_start,
         periodEnd: stripeSubscription.current_period_end,
+        plan: session.metadata?.plan || stripeSubscription.metadata?.plan || 'premium',
       });
     }
   }

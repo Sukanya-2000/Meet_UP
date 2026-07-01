@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { forgotPassword, login, register } from '../controllers/auth.controller.js';
+import { forgotPassword, login, register, resetPassword, refreshSession, logoutSession, listSessions, revokeSessionById } from '../controllers/auth.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 const router = Router();
@@ -16,5 +17,10 @@ router.use(authLimiter);
 router.post('/register', asyncHandler(register));
 router.post('/login', asyncHandler(login));
 router.post('/forgot-password', asyncHandler(forgotPassword));
+router.post('/reset-password', asyncHandler(resetPassword));
+router.post('/refresh', asyncHandler(refreshSession));
+router.post('/logout', asyncHandler(logoutSession));
+router.get('/sessions', protect, asyncHandler(listSessions));
+router.delete('/sessions/:id', protect, asyncHandler(revokeSessionById));
 
 export default router;

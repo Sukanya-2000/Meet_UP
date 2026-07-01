@@ -1,0 +1,3 @@
+import mongoose from 'mongoose';
+const schema = new mongoose.Schema({ userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true }, type: { type: String, enum: ['text','emoji','prompt','question'], required: true }, content: { type: String, required: true, trim: true, maxlength: 300 }, enabled: { type: Boolean, default: true }, orderIndex: { type: Number, min: 0, max: 9, default: 0 }, moderationStatus: { type: String, enum: ['pending','approved','rejected'], default: 'pending', index: true }, moderationNote: { type: String, maxlength: 500, default: '' } }, { timestamps: true }); schema.index({ userId: 1, orderIndex: 1 });
+export default mongoose.model('OpeningMove', schema);

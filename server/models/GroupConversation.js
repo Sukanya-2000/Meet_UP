@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({type:{type:String,enum:['double-date','event','community'],required:true,index:true},sourceId:{type:mongoose.Schema.Types.ObjectId,required:true,index:true},participants:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}],admins:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}],title:{type:String,maxlength:160,default:''},active:{type:Boolean,default:true}},{timestamps:true});schema.index({type:1,sourceId:1},{unique:true});export default mongoose.model('GroupConversation',schema);

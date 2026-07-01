@@ -271,9 +271,9 @@ export default function DiscoverPage() {
     const motion = action === 'pass' ? 'left' : 'right';
     setState((value) => ({ ...value, motion }));
     try {
-      const result = action === 'like'
-        ? await matchService.like(current.userId)
-        : await discoveryService.swipe(current.userId, action);
+      const result = action === 'super-like'
+        ? await matchService.superLike(current.userId)
+        : action === 'like' ? await matchService.like(current.userId) : await discoveryService.swipe(current.userId, action);
       if (result.matched && result.isNewMatch) setNewMatch(result.match);
       window.setTimeout(() => {
         setProfiles((items) => items.slice(1));
@@ -332,7 +332,7 @@ export default function DiscoverPage() {
       <div className="relative mt-1 w-full max-w-md" style={{ height: 'min(72vh, 700px)', minHeight: 560 }}>
         {profiles.slice(0, 2).reverse().map((profile, reverseIndex) => {
           const isCurrent = reverseIndex === profiles.slice(0, 2).length - 1;
-          return <SwipeCard key={profile._id} profile={profile} motion={isCurrent ? state.motion : ''} onPass={() => act('pass')} onLike={() => act('like')} />;
+          return <SwipeCard key={profile._id} profile={profile} motion={isCurrent ? state.motion : ''} onPass={() => act('pass')} onLike={() => act('like')} onSuperLike={() => act('super-like')} />;
         })}
         {state.loading && !current && <div className="glass flex h-full items-center justify-center rounded-[2rem]"><LoaderCircle className="animate-spin text-coral-400" size={34} /></div>}
         {!state.loading && !current && <DiscoveryEmptyState mode={currentMode} emptyReason={state.emptyReason} onRefresh={() => load(1)} />}

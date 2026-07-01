@@ -47,11 +47,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> load({bool silent = false}) async {
     if (!silent) setState(() => loading = true);
+    final app = context.read<AppState>();
     try {
-      final data = await context.read<AppState>().messages(widget.conversationId);
+      final data = await app.messages(widget.conversationId);
       messages = (data['messages'] as List? ?? []).map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e))).toList();
       otherUserId = data['otherUserId']?.toString() ?? widget.match?.otherUserId;
-      final app = context.read<AppState>();
       if (app.readReceipts) app.sockets.markRead(widget.conversationId);
     } catch (_) {}
     if (mounted) {
@@ -80,12 +80,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> pickMedia() async {
+    final app = context.read<AppState>();
     final result = await FilePicker.pickFiles(allowMultiple: true, type: FileType.any);
     final paths = result?.files.map((f) => f.path).whereType<String>().toList() ?? [];
     if (paths.isEmpty) return;
     setState(() => sending = true);
     try {
-      await context.read<AppState>().uploadChatMedia(widget.conversationId, paths.map(File.new).toList());
+      await app.uploadChatMedia(widget.conversationId, paths.map(File.new).toList());
       await load(silent: true);
     } finally {
       if (mounted) setState(() => sending = false);

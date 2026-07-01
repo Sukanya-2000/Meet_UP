@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({fromGroupId:{type:mongoose.Schema.Types.ObjectId,ref:'DoubleDateGroup',required:true},toGroupId:{type:mongoose.Schema.Types.ObjectId,ref:'DoubleDateGroup',required:true},action:{type:String,enum:['like','pass'],required:true}},{timestamps:true});schema.index({fromGroupId:1,toGroupId:1},{unique:true});export default mongoose.model('DoubleDateSwipe',schema);

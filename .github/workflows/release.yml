@@ -1,0 +1,17 @@
+name: Release
+on:
+  push: { tags: ['v*'] }
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci && npm --prefix server ci
+      - run: npm run lint && npm run build && npm --prefix server test
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+      - uses: docker/build-push-action@v6
+        with: { context: ., push: true, tags: 'ghcr.io/${{ github.repository }}:${{ github.ref_name }}' }

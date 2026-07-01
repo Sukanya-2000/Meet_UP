@@ -34,7 +34,7 @@ export const assertMatchMember = async (matchId, userId) => {
 };
 
 export const assertConversationMember = async (conversationId, userId) => {
-  const conversation = await Conversation.findOne({ _id: conversationId, participants: userId });
+  const conversation = await Conversation.findOne({ _id: conversationId, participants: userId, active: true });
   if (!conversation) {
     const error = new Error('Conversation not found');
     error.statusCode = 404;

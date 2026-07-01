@@ -1,0 +1,1 @@
+import mongoose from 'mongoose';const schema=new mongoose.Schema({name:{type:String,required:true,unique:true},domain:{type:String,required:true,unique:true,lowercase:true},city:{type:String,default:''},country:{type:String,default:''},status:{type:String,enum:['active','inactive'],default:'active'}},{timestamps:true});export default mongoose.model('Institution',schema);

@@ -1,4 +1,4 @@
-import { Flag, Gauge, LogOut, ShieldCheck, Users } from 'lucide-react';
+import { Flag, Gauge, LogOut, Settings, ShieldCheck, Users } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
@@ -16,6 +16,7 @@ export default function AdminLayout() {
           <NavLink className={link} to="/admin/users"><Users size={18} /> Users</NavLink>
           <NavLink className={link} to="/admin/reports"><Flag size={18} /> Reports</NavLink>
           <NavLink className={link} to="/admin/verifications"><ShieldCheck size={18} /> Verifications</NavLink>
+          <NavLink className={link} to="/admin/settings"><Settings size={18} /> Configuration</NavLink>
         </nav>
         <button onClick={() => { logout(); navigate('/admin/login'); }} className={`${link} mt-4 w-full`}><LogOut size={18} /> Log out</button>
       </aside>

@@ -1,6 +1,6 @@
 {
   "name": "cybernest-server",
-  "version": "1.2.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "main": "server.js",
@@ -14,6 +14,7 @@
     "sync:request-likes": "node scripts/sync-request-likes.js",
     "validate:collections": "node scripts/validate-core-collections.js",
     "ensure:demo-sparks": "node scripts/ensure-demo-sparks.js"
+    ,"test": "node --test test/*.test.js", "migrate:priority1": "node scripts/migrate-priority1.js", "migrate:priority2": "node scripts/migrate-priority2.js", "migrate:priority3": "node scripts/migrate-priority3.js", "migrate:priority4": "node scripts/migrate-priority4.js", "migrate:release": "node scripts/migrate-release-1.0.0.js", "worker": "node worker.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

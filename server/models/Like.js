@@ -19,6 +19,8 @@ const likeSchema = new mongoose.Schema({
     default: 'pending',
     index: true,
   },
+  kind: { type: String, enum: ['like', 'super-like'], default: 'like', index: true },
+  note: { type: String, trim: true, maxlength: 280, default: '' },
 }, { timestamps: true });
 
 likeSchema.index({ fromUser: 1, toUser: 1 }, { unique: true });

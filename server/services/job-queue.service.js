@@ -1,0 +1,4 @@
+class JobProvider{async enqueue(){throw new Error('Not implemented')}async stats(){throw new Error('Not implemented')}}
+class MemoryJobs extends JobProvider{constructor(){super();this.jobs=[]}async enqueue(name,payload={},options={}){const job={id:crypto.randomUUID(),name,payload,options,status:'queued',createdAt:new Date()};this.jobs.push(job);return job}async stats(){return{provider:'memory',queued:this.jobs.filter(j=>j.status==='queued').length,total:this.jobs.length}}}
+class ExternalJobs extends MemoryJobs{constructor(provider){super();this.provider=provider}async stats(){return{...(await super.stats()),provider:this.provider,configured:false}}}
+import crypto from'crypto';const provider=process.env.JOB_PROVIDER||'memory';export const jobs=provider==='memory'?new MemoryJobs():new ExternalJobs(provider);export{JobProvider,MemoryJobs,ExternalJobs};

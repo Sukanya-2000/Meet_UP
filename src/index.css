@@ -3,6 +3,14 @@
 @tailwind components;
 @tailwind utilities;
 
+:focus-visible { outline: 3px solid #0ea5e9; outline-offset: 3px; }
+html { font-size: clamp(16px, calc(15px + .2vw), 20px); }
+html[data-contrast='high'] { filter: contrast(1.2); }
+html[data-reduced-motion='true'] *, html[data-reduced-motion='true'] *::before, html[data-reduced-motion='true'] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+html[data-color-vision='deuteranopia'] { --cn-coral: #d55e00; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+[dir='rtl'] body { text-align: right; }
+
 @layer base {
   :root {
     --cn-bg:

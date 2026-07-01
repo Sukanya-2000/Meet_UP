@@ -38,12 +38,12 @@ class AppTheme {
         ),
       );
 
-  static ThemeData forStyle(CyberTheme style, {Brightness brightness = Brightness.light}) {
-    final seed = switch (style) {
+  static ThemeData forStyle(CyberTheme style, {Brightness brightness = Brightness.light, String? accent, bool highContrast = false}) {
+    final seed = accent == null ? switch (style) {
       CyberTheme.blossom => const Color(0xFF9B5DE5),
       CyberTheme.sunset => coral,
       CyberTheme.ivory => const Color(0xFFE76F51),
-    };
+    } : switch (accent) { 'rose' => rose, 'violet' => const Color(0xFF8B5CF6), 'blue' => const Color(0xFF0EA5E9), 'emerald' => const Color(0xFF10B981), 'amber' => const Color(0xFFF59E0B), _ => coral };
     final background = brightness == Brightness.dark
         ? switch (style) {
             CyberTheme.blossom => const Color(0xFF150A1F),
@@ -59,7 +59,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       scaffoldBackgroundColor: background,
-      colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: brightness),
+      colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: brightness, contrastLevel: highContrast ? 1 : 0),
       textTheme: ThemeData(brightness: brightness).textTheme.copyWith(
         displaySmall: TextStyle(fontSize: 32, height: 1.08, fontWeight: FontWeight.w800, color: brightness == Brightness.dark ? Colors.white : ink),
       ),

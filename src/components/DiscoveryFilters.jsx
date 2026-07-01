@@ -123,7 +123,7 @@ export default function DiscoveryFilters({ filters, setFilters, onApply, onClose
                 Verified profiles only
                 <input type="checkbox" checked={filters.verifiedOnly} onChange={(e) => setValue('verifiedOnly', e.target.checked)} />
               </label>
-              {filterRows.map(({ key, label, icon: Icon, options }) => (
+              {filterRows.map(({ key, label, options }) => (
                 <div key={key} className="border-b border-slate-100 py-4 last:border-b-0">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 text-lg font-semibold"><Icon size={20} className="text-slate-400" /> {label}</div>

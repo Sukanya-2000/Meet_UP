@@ -12,6 +12,7 @@ export default function PremiumPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [checkingCheckout, setCheckingCheckout] = useState(false);
+  const [selectedPlan] = useState('gold');
   const [now, setNow] = useState(Date.now());
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function PremiumPage() {
     try {
       setError('');
       setMessage('');
-      const data = await premiumService.createCheckoutSession();
+      const data = await premiumService.createCheckoutSession(selectedPlan);
       setMessage('Redirecting to Stripe Checkout...');
       window.location.href = data.checkoutUrl;
     }

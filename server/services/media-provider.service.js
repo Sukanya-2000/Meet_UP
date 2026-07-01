@@ -1,0 +1,5 @@
+import crypto from'crypto';import path from'path';
+class MediaProvider{async signedUpload(){throw new Error('Not implemented')}async signedRead(){throw new Error('Not implemented')}}
+class LocalMediaProvider extends MediaProvider{async signedUpload({filename}){const key=`${Date.now()}-${crypto.randomBytes(8).toString('hex')}${path.extname(filename)}`;return{provider:'local',key,uploadUrl:`/api/media/local/${key}`,expiresAt:new Date(Date.now()+900000)}}async signedRead({key}){return{url:`/uploads/${key}`,expiresAt:null}}}
+class RemoteMediaProvider extends MediaProvider{constructor(name){super();this.name=name}async signedUpload(){const error=new Error(`${this.name} media provider credentials/SDK are not configured`);error.statusCode=503;throw error}async signedRead(){throw new Error(`${this.name} media provider is not configured`)}}
+export const mediaProvider=()=>{const name=process.env.MEDIA_PROVIDER||'local';return name==='local'?new LocalMediaProvider():new RemoteMediaProvider(name)};export{MediaProvider,LocalMediaProvider,RemoteMediaProvider};

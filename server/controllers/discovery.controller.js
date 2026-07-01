@@ -8,12 +8,16 @@ import { isPremium } from '../services/subscription.service.js';
 import Block from '../models/Block.js';
 import { isUserOnline } from '../socket/index.js';
 import { discoveryModeMeta, discoveryModes, enrichAndRankProfiles, zodiacSigns } from '../services/discovery-ranking.service.js';
+import { recommendationProvider } from '../services/recommendation-engine.service.js';
+import { cache } from '../services/cache.service.js';
+import AnalyticsEvent from '../models/AnalyticsEvent.js';
 
 export const getDiscovery = async (req, res) => {
   const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
   const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 10, 1), 30);
   const premium = await isPremium(req.user._id);
   const savedPreference = await Preference.findOne({ userId: req.user._id }).lean();
+  const myProfile = await Profile.findOne({ userId: req.user._id }).select('location travelMode interests music relationshipIntentions').lean();
   const queryNumber = (name, fallback, min, max) => Math.min(Math.max(Number(req.query[name] ?? fallback) || fallback, min), max);
   const queryList = (name) => String(req.query[name] || '')
     .split(',')
@@ -43,9 +47,10 @@ export const getDiscovery = async (req, res) => {
   const discoveryMode = discoveryModes.includes(req.query.mode) ? req.query.mode : 'for-you';
   const myZodiac = zodiacSigns.includes(req.query.myZodiac) ? req.query.myZodiac : '';
   const compatibility = ['all', 'high', 'medium'].includes(req.query.compatibility) ? req.query.compatibility : 'all';
-  const [swipedIds, likedIds, blocks] = await Promise.all([
+  const [swipedIds, likedIds, inboundLikerIds, blocks] = await Promise.all([
     Swipe.distinct('toUser', { fromUser: req.user._id }),
     Like.distinct('toUser', { fromUser: req.user._id }),
+    Like.distinct('fromUser', { toUser: req.user._id }),
     Block.find({ $or: [{ blockerId: req.user._id }, { blockedUserId: req.user._id }] }).lean(),
   ]);
   const blockedIds = blocks.map((block) =>
@@ -60,6 +65,8 @@ export const getDiscovery = async (req, res) => {
   const oldestDob = new Date(today.getFullYear() - ageMax - 1, today.getMonth(), today.getDate() + 1);
   const buildMatch = (excludedIds) => ({
     userId: { $nin: excludedIds },
+    $or: [{ incognitoEnabled: { $ne: true } }, { userId: { $in: inboundLikerIds } }],
+    $and: [{ $or: [{ 'snooze.enabled': { $ne: true } }, { 'snooze.endsAt': { $lte: new Date() } }] }],
     dob: { $gte: oldestDob, $lte: youngestDob },
     ...((verifiedOnly || discoveryMode === 'verified-only') && { isVerified: true }),
     ...(gender && { gender }),
@@ -118,12 +125,24 @@ export const getDiscovery = async (req, res) => {
       interests,
     },
   });
+  const origin = myProfile?.travelMode?.enabled && new Date(myProfile.travelMode.expiresAt) > new Date() ? myProfile.travelMode.location?.coordinates : myProfile?.location?.coordinates;
+  if (origin?.length === 2) {
+    const radians = (degrees) => degrees * Math.PI / 180;
+    data = data.map((profile) => {
+      const point = profile.location?.coordinates;
+      if (!point?.length) return { ...profile, distanceKm: null };
+      const dLat = radians(point[1] - origin[1]); const dLon = radians(point[0] - origin[0]);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(origin[1])) * Math.cos(radians(point[1])) * Math.sin(dLon / 2) ** 2;
+      return { ...profile, distanceKm: Math.round(6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10 };
+    }).filter((profile) => profile.distanceKm === null || profile.distanceKm <= maximumDistance);
+  } else data = data.map((profile) => ({ ...profile, distanceKm: null }));
   if (discoveryMode === 'online-now') data = data.filter((profile) => profile.isOnline);
   if (discoveryMode === 'music') data = data.filter((profile) => profile.interests?.includes('Music') || profile.music?.anthem);
   if (discoveryMode === 'astrology') data = data.filter((profile) => profile.zodiac || profile.astrology?.sun);
   if (discoveryMode === 'double-date') data = data.filter((profile) => profile.modeEligibility?.doubleDate !== false && (profile.openTo?.includes('Dates') || profile.lookingFor));
   if (discoveryMode === 'matchmaker') data = data.filter((profile) => profile.modeEligibility?.matchmaker !== false && (profile.isVerified || profile.trustScore >= 60));
   if (discoveryMode === 'share-date') data = data.filter((profile) => profile.modeEligibility?.shareDate !== false && profile.isVerified && profile.trustScore >= 60);
+  data = data.map((profile) => ({ ...profile, recommendation: recommendationProvider.score(profile, { interests: myProfile?.interests || [], music: myProfile?.music?.topArtists || [], intentions: myProfile?.relationshipIntentions || [], maximumDistance }) })).sort((a,b)=>b.recommendation.score-a.recommendation.score);
 
   const total = data.length;
   const pagedProfiles = data.slice((page - 1) * limit, page * limit);
@@ -145,4 +164,12 @@ export const getDiscovery = async (req, res) => {
     profiles: pagedProfiles,
     pagination: { page, limit, total, hasMore: page * limit < total },
   });
+  await AnalyticsEvent.create({ userId: req.user._id, name: 'discovery_view', properties: { mode: discoveryMode, count: pagedProfiles.length } });
+};
+
+export const getCuratedDiscovery = async (req,res)=>{
+  const key=`curated:${req.user._id}`;const cached=await cache.get(key);if(cached)return res.json({...cached,cached:true});
+  const profiles=await Profile.find({userId:{$ne:req.user._id},'snooze.enabled':{$ne:true}}).sort({trustScore:-1,updatedAt:-1}).limit(100).lean();const context=await Profile.findOne({userId:req.user._id}).lean();
+  const ranked=profiles.map(p=>({...p,recommendation:recommendationProvider.score(p,{interests:context?.interests||[],music:context?.music?.topArtists||[],intentions:context?.relationshipIntentions||[],maximumDistance:50})})).sort((a,b)=>b.recommendation.score-a.recommendation.score);
+  const payload={success:true,collections:{dailyPicks:ranked.slice(0,10),topPicks:ranked.filter(p=>p.isVerified).slice(0,10),trending:ranked.slice().sort((a,b)=>(b.trustScore||0)-(a.trustScore||0)).slice(0,10),recentlyActive:ranked.slice().sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt)).slice(0,10),mostCompatible:ranked.slice(0,10),sharedInterests:ranked.filter(p=>p.recommendation.signals.interest>0).slice(0,10),sharedMusic:ranked.filter(p=>p.recommendation.signals.music>0).slice(0,10),sharedLifestyle:ranked.filter(p=>p.recommendation.signals.lifestyle>0).slice(0,10)}};await cache.set(key,payload,3600);res.json(payload);
 };

@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { protect } from '../middleware/auth.middleware.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { getPreferences, listNotifications, markAllRead, markRead, registerDevice, unregisterDevice, updatePreferences } from '../controllers/notification.controller.js';
+const router = Router(); router.use(protect);
+router.get('/', asyncHandler(listNotifications));
+router.put('/read-all', asyncHandler(markAllRead));
+router.put('/:id/read', asyncHandler(markRead));
+router.get('/settings/preferences', asyncHandler(getPreferences));
+router.put('/settings/preferences', asyncHandler(updatePreferences));
+router.post('/devices', asyncHandler(registerDevice));
+router.delete('/devices', asyncHandler(unregisterDevice));
+export default router;

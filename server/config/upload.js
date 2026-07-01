@@ -28,6 +28,13 @@ const fileFilter = (_req, file, callback) => {
   const accepted = ['image/jpeg', 'image/png', 'image/webp'];
   callback(accepted.includes(file.mimetype) ? null : new Error('Only JPG, PNG, and WebP images are allowed'), accepted.includes(file.mimetype));
 };
+const chatFileFilter = (_req, file, callback) => {
+  const accepted = new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm','audio/mpeg','audio/webm','audio/wav','application/pdf','text/plain']);
+  const extension = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = new Set(['.jpg','.jpeg','.png','.webp','.gif','.mp4','.webm','.mp3','.wav','.pdf','.txt']);
+  const allowed = accepted.has(file.mimetype) && allowedExtensions.has(extension);
+  callback(allowed ? null : new Error('Unsupported or mismatched media type'), allowed);
+};
 
 export const uploadPhotos = multer({
   storage,
@@ -37,5 +44,6 @@ export const uploadPhotos = multer({
 
 export const uploadChatMedia = multer({
   storage: chatStorage,
+  fileFilter: chatFileFilter,
   limits: { fileSize: 25 * 1024 * 1024, files: 6 },
 });

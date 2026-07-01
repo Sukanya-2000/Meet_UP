@@ -2,9 +2,9 @@ import mongoose from 'mongoose';
 
 const subscriptionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true, index: true },
-  plan: { type: String, enum: ['free', 'premium'], default: 'free' },
+  plan: { type: String, enum: ['free', 'plus', 'gold', 'platinum', 'premium'], default: 'free' },
   status: { type: String, enum: ['inactive', 'pending', 'active', 'cancelled', 'expired'], default: 'inactive' },
-  provider: { type: String, default: 'mock' },
+  provider: { type: String, enum: ['stripe', 'apple', 'google', 'admin'], default: 'stripe' },
   providerSubscriptionId: { type: String, default: null },
   stripeCustomerId: { type: String, default: null, index: true },
   stripeSubscriptionId: { type: String, default: null, index: true },

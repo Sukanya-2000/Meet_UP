@@ -1,5 +1,5 @@
 class Profile {
-  Profile({required this.userId, required this.firstName, this.city = '', this.dob, this.bio = '', this.interests = const [], this.photos = const [], this.isVerified = false, this.isOnline = false});
+  Profile({required this.userId, required this.firstName, this.city = '', this.dob, this.bio = '', this.interests = const [], this.photos = const [], this.isVerified = false, this.isOnline = false, this.astrology = const {}, this.astrologyCompatibility = const {}});
   final String userId;
   final String firstName;
   final String city;
@@ -9,6 +9,8 @@ class Profile {
   final List<Photo> photos;
   final bool isVerified;
   final bool isOnline;
+  final Map<String, dynamic> astrology;
+  final Map<String, dynamic> astrologyCompatibility;
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
         userId: '${json['userId'] ?? json['_id'] ?? ''}',
@@ -20,6 +22,8 @@ class Profile {
         photos: (json['photos'] as List? ?? []).map((e) => Photo.fromJson(Map<String, dynamic>.from(e))).toList(),
         isVerified: json['isVerified'] == true,
         isOnline: json['isOnline'] == true,
+        astrology: json['astrology'] is Map ? Map<String, dynamic>.from(json['astrology']) : const {},
+        astrologyCompatibility: json['astrologyCompatibility'] is Map ? Map<String, dynamic>.from(json['astrologyCompatibility']) : const {},
       );
 
   String get westernZodiac {

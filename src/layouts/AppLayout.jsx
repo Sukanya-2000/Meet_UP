@@ -1,4 +1,4 @@
-import { Compass, Crown, Heart, LogOut, MessageCircle, Settings, ShieldCheck, UserRound, UsersRound } from 'lucide-react';
+import { CalendarDays, Compass, Crown, Heart, LogOut, MessageCircle, Settings, ShieldCheck, UserRound, UsersRound } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import CyberNestLogo from '../components/CyberNestLogo';
 import useAuth from '../hooks/useAuth';
@@ -19,6 +19,7 @@ export default function AppLayout() {
             <NavLink to="/requests" className="rounded-2xl p-2.5 text-slate-400 hover:bg-coral-50 hover:text-coral-500" title="Requests"><UsersRound size={20} /></NavLink>
             <NavLink to="/connections" className="rounded-2xl p-2.5 text-slate-400 hover:bg-coral-50 hover:text-coral-500" title="Matches"><MessageCircle size={20} /></NavLink>
             <NavLink to="/liked-you" className="rounded-2xl p-2.5 text-slate-400 hover:bg-coral-50 hover:text-coral-500" title="Likes"><Heart size={20} /></NavLink>
+            <NavLink to="/community" className="rounded-2xl p-2.5 text-slate-400 hover:bg-coral-50 hover:text-coral-500" title="Community"><CalendarDays size={20} /></NavLink>
             <NavLink to="/premium" className="rounded-2xl p-2.5 text-amber-500 hover:bg-amber-50" title="Premium"><Crown size={20} /></NavLink>
             <NavLink to="/safety" className="rounded-2xl p-2.5 text-emerald-500 hover:bg-emerald-50" title="Safety Center"><ShieldCheck size={20} /></NavLink>
             <NavLink to="/profile/edit" className="rounded-2xl p-2.5 text-slate-400 hover:bg-coral-50 hover:text-coral-500" title="Profile"><UserRound size={20} /></NavLink>

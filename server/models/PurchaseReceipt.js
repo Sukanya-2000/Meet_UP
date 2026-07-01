@@ -1,0 +1,3 @@
+import mongoose from 'mongoose';
+const schema = new mongoose.Schema({ userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true }, provider: { type: String, enum: ['stripe','apple','google'], required: true }, transactionId: { type: String, required: true }, productId: { type: String, required: true }, status: { type: String, enum: ['pending','active','expired','revoked'], default: 'pending' }, expiresAt: { type: Date, default: null }, receipt: { type: String, select: false, default: '' } }, { timestamps: true }); schema.index({ provider: 1, transactionId: 1 }, { unique: true });
+export default mongoose.model('PurchaseReceipt', schema);

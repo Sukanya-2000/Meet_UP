@@ -1,0 +1,4 @@
+const counters=new Map();export const metrics={increment(name,value=1){counters.set(name,(counters.get(name)||0)+value)},snapshot(){return Object.fromEntries(counters)}};
+export const logger={info(message,data={}){console.log(JSON.stringify({level:'info',message,...data,timestamp:new Date().toISOString()}))},warn(message,data={}){console.warn(JSON.stringify({level:'warn',message,...data,timestamp:new Date().toISOString()}))},error(message,data={}){console.error(JSON.stringify({level:'error',message,...data,timestamp:new Date().toISOString()}))}};
+export const observe=(req,res,next)=>{const started=Date.now();const traceId=req.get('x-request-id')||crypto.randomUUID();req.traceId=traceId;res.set('x-request-id',traceId);res.on('finish',()=>{const durationMs=Date.now()-started;metrics.increment(`http_${res.statusCode}`);if(durationMs>1000)logger.warn('slow_request',{traceId,method:req.method,path:req.path,durationMs});});next()};
+import crypto from'crypto';

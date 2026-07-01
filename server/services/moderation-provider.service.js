@@ -1,0 +1,4 @@
+const scamTerms = /(?:send money|gift card|crypto wallet|bank transfer)/i; const explicitTerms = /(?:explicit|nude|naked)/i; const violenceTerms = /(?:kill|weapon|attack)/i;
+class ModerationProvider { async scan() { throw new Error('Not implemented'); } }
+class RulesProvider extends ModerationProvider { async scan({ text = '', targetType }) { const categories=[]; if(scamTerms.test(text)) categories.push('scam'); if(explicitTerms.test(text)) categories.push('explicit'); if(violenceTerms.test(text)) categories.push('violence'); const score=categories.length?0.85:0; return { provider:'rules',categories,score,action: targetType==='image'&&categories.includes('explicit')?'blur':categories.length?'warn':'allow' }; } }
+export const moderationProvider = new RulesProvider(); export { ModerationProvider };

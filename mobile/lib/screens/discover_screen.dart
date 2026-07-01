@@ -77,7 +77,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final current = profiles.first;
     final app = context.read<AppState>();
     try {
-      if (action == 'like') {
+      if (action == 'super-like') {
+        await app.superLike(current.userId);
+      } else if (action == 'like') {
         final res = await app.like(current.userId);
         if (res['matched'] == true && mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("It's a Match!")));
       } else if (action == 'request') {
@@ -155,6 +157,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ]),
           ),
         ),
+        if (mode == 'astrology') Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(children: [
+            Expanded(child: FilledButton.icon(onPressed: () => _showAstrologyAbout(p), icon: const Icon(Icons.auto_awesome), label: const Text('About You'))),
+            if (p != null && p.astrologyCompatibility.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Chip(label: Text('${p.astrologyCompatibility['label'] ?? 'Compatibility'} ${p.astrologyCompatibility['score'] ?? ''}%')),
+            ],
+          ]),
+        ),
         if (error != null) Text(error!, style: const TextStyle(color: Colors.red)),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator())),
         if (!loading && p == null) const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('You are all caught up.'))),
@@ -172,6 +184,43 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       ]),
     );
   }
+
+  void _showAstrologyAbout(Profile? profile) {
+    final astrology = profile?.astrology ?? const <String, dynamic>{};
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: const Color(0xFF28104A),
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: .82,
+        builder: (_, controller) => ListView(controller: controller, padding: const EdgeInsets.all(24), children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('CyberNest Astrology', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: Colors.white))]),
+          const Text('About You', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 22),
+          _AstrologyInsight(icon: Icons.wb_sunny, color: Colors.orangeAccent, sign: 'Sun in ${astrology['sun'] ?? myZodiac}', title: 'Your core personality', copy: "You're adventurous, honest, and endlessly curious. You naturally look for meaning and possibility."),
+          _AstrologyInsight(icon: Icons.nightlight_round, color: Colors.lightBlueAccent, sign: 'Moon in ${astrology['moon'] ?? 'Libra'}', title: 'Your emotional side', copy: 'You process emotions through connection, communication, and balance.'),
+          _AstrologyInsight(icon: Icons.cloud, color: Colors.pinkAccent, sign: 'Rising in ${astrology['rising'] ?? 'Aquarius'}', title: 'How others see you', copy: 'You present yourself as original, expressive, and unmistakably your own person.'),
+          if (profile?.astrologyCompatibility.isNotEmpty == true) Card(color: Colors.white12, child: Padding(padding: const EdgeInsets.all(16), child: Text('${profile!.astrologyCompatibility['label']}: ${profile.astrologyCompatibility['score']}% compatibility', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)))),
+        ]),
+      ),
+    );
+  }
+}
+
+class _AstrologyInsight extends StatelessWidget {
+  const _AstrologyInsight({required this.icon, required this.color, required this.sign, required this.title, required this.copy});
+  final IconData icon;
+  final Color color;
+  final String sign;
+  final String title;
+  final String copy;
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 28), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Icon(icon, color: color, size: 44), const SizedBox(width: 16),
+    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(sign, style: TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.bold)), Text(title, style: const TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w900)), const SizedBox(height: 6), Text(copy, style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.4))])),
+  ]));
 }
 
 class _SwipeBackground extends StatelessWidget {
@@ -232,6 +281,7 @@ class _ProfileCardState extends State<_ProfileCard> {
         ])),
         Positioned(left: 0, right: 0, bottom: 20, child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
           _Round(big: true, icon: Icons.close, color: Colors.redAccent, onTap: () => context.findAncestorStateOfType<_DiscoverScreenState>()?.act('pass')),
+          _Round(big: false, icon: Icons.star, color: Colors.lightBlue, onTap: () => context.findAncestorStateOfType<_DiscoverScreenState>()?.act('super-like')),
           _Round(big: true, icon: Icons.favorite, color: AppTheme.coral, onTap: () => context.findAncestorStateOfType<_DiscoverScreenState>()?.act('like')),
         ])),
       ]),

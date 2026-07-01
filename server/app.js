@@ -22,6 +22,19 @@ import likesRoutes from './routes/likes.routes.js';
 import conversationRoutes from './routes/conversation.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import featureRoutes from './routes/feature.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
+import promptRoutes from './routes/prompt.routes.js';
+import gifRoutes from './routes/gif.routes.js';
+import openingMoveRoutes from './routes/openingMove.routes.js';
+import lifecycleRoutes from './routes/lifecycle.routes.js';
+import interactionRoutes from './routes/interaction.routes.js';
+import socialRoutes from './routes/social.routes.js';
+import communityRoutes from './routes/community.routes.js';
+import platformRoutes from './routes/platform.routes.js';
+import enterpriseRoutes from './routes/enterprise.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
+import { observe } from './services/observability.service.js';
+import { idempotency } from './middleware/idempotency.middleware.js';
 import { stripeWebhook } from './controllers/payment.controller.js';
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 import { sanitizeInput } from './middleware/security.middleware.js';
@@ -29,7 +42,8 @@ import rateLimit from 'express-rate-limit';
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], imgSrc: ["'self'", 'data:', 'https:'], mediaSrc: ["'self'", 'blob:', 'https:'], connectSrc: ["'self'", 'https:', 'wss:'], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"] } }, referrerPolicy: { policy: 'strict-origin-when-cross-origin' } }));
+app.use(observe);
 app.use(cors({
   origin: (process.env.CLIENT_URL || 'http://localhost:5173').split(','),
   credentials: true,
@@ -51,6 +65,7 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(sanitizeInput);
+app.use(idempotency);
 app.use('/uploads', express.static(path.resolve('uploads')));
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
@@ -74,7 +89,17 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/safety', safetyRoutes);
 app.use('/api/likes', likesRoutes);
 app.use('/api/features', featureRoutes);
-
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/profile/prompts', promptRoutes);
+app.use('/api/gifs', gifRoutes);
+app.use('/api/opening-moves', openingMoveRoutes);
+app.use('/api/lifecycle', lifecycleRoutes);
+app.use('/api/interactions', interactionRoutes);
+app.use('/api/social', socialRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/platform', platformRoutes);
+app.use('/api/enterprise', enterpriseRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

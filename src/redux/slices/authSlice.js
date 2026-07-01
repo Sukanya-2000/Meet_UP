@@ -36,6 +36,7 @@ const authSlice = createSlice({
       state.token = null;
       localStorage.removeItem('cybernest_token');
       localStorage.removeItem('cybernest_user');
+      localStorage.removeItem('cybernest_refresh_token');
     },
   },
   extraReducers: (builder) => {
@@ -52,6 +53,7 @@ const authSlice = createSlice({
           state.token = action.payload.token;
           localStorage.setItem('cybernest_token', action.payload.token);
           localStorage.setItem('cybernest_user', JSON.stringify(action.payload.user));
+          if (action.payload.refreshToken) localStorage.setItem('cybernest_refresh_token', action.payload.refreshToken);
         },
       )
       .addMatcher(

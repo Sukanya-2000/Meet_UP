@@ -56,6 +56,7 @@ const messageSchema = new mongoose.Schema({
 
 messageSchema.index({ matchId: 1, createdAt: 1 });
 messageSchema.index({ conversationId: 1, createdAt: 1 });
+messageSchema.index({ receiverId: 1, readAt: 1, createdAt: -1 });
 
 messageSchema.pre('validate', function normalizeText(next) {
   if (!this.text && this.message) this.text = this.message;
