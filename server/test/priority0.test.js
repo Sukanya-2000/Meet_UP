@@ -40,6 +40,10 @@ test('release artifacts include accessibility and API contracts', () => {
   const openapi = fs.readFileSync(new URL('../../docs/openapi.yaml', import.meta.url), 'utf8');
   assert.match(openapi, /openapi: 3\.1\.0/); assert.match(openapi, /\/auth\/refresh/);
 });
+test('Spotify browser callback remains public', () => {
+  const routes = fs.readFileSync(new URL('../routes/platform.routes.js', import.meta.url), 'utf8');
+  assert.ok(routes.indexOf("router.get('/music/spotify/callback'") < routes.indexOf('router.use(protect)'));
+});
 test('priority two lifecycle and provider-neutral call schemas are constrained', () => {
   assert.deepEqual(Match.schema.path('firstMoveRule').enumValues, ['anyone', 'women-first', 'opening-move', 'custom']);
   assert.deepEqual(OpeningMove.schema.path('type').enumValues, ['text', 'emoji', 'prompt', 'question']);

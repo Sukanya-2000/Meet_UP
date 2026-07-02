@@ -1,1 +1,34 @@
-import{Router}from'express';import{protect}from'../middleware/auth.middleware.js';import{adminOnly}from'../middleware/admin.middleware.js';import asyncHandler from'../utils/asyncHandler.js';import{analytics,campusDiscover,campusJoin,clearCache,disconnectMusic,exportAnalytics,mediaSign,musicProfile,ops,spotifyCallback,spotifyStart,track,institutions,saveInstitution,verifyCampus,moderateEvent,pendingEvents,flags,saveFlag}from'../controllers/platform.controller.js';const r=Router();r.post('/music/spotify/callback',asyncHandler(spotifyCallback));r.use(protect);r.get('/music/spotify/start',asyncHandler(spotifyStart));r.delete('/music',asyncHandler(disconnectMusic));r.get('/music',asyncHandler(musicProfile));r.post('/campus/join',asyncHandler(campusJoin));r.get('/campus/discovery',asyncHandler(campusDiscover));r.post('/media/sign',asyncHandler(mediaSign));r.post('/analytics/track',asyncHandler(track));r.get('/admin/analytics',adminOnly,asyncHandler(analytics));r.get('/admin/analytics/export',adminOnly,asyncHandler(exportAnalytics));r.get('/admin/ops',adminOnly,asyncHandler(ops));r.delete('/admin/cache',adminOnly,asyncHandler(clearCache));r.get('/admin/institutions',adminOnly,asyncHandler(institutions));r.post('/admin/institutions',adminOnly,asyncHandler(saveInstitution));r.put('/admin/institutions/:id',adminOnly,asyncHandler(saveInstitution));r.put('/admin/campus/:id',adminOnly,asyncHandler(verifyCampus));r.get('/admin/events',adminOnly,asyncHandler(pendingEvents));r.put('/admin/events/:id',adminOnly,asyncHandler(moderateEvent));r.get('/admin/flags',adminOnly,asyncHandler(flags));r.put('/admin/flags/:key',adminOnly,asyncHandler(saveFlag));export default r;
+import { Router } from 'express';
+import { protect } from '../middleware/auth.middleware.js';
+import { adminOnly } from '../middleware/admin.middleware.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { analytics, campusDiscover, campusInstitutionSearch, campusJoin, campusOverview, clearCache, disconnectMusic, exportAnalytics, mediaSign, musicProfile, ops, spotifyCallback, spotifyStart, track, institutions, saveInstitution, verifyCampus, moderateEvent, pendingEvents, flags, saveFlag } from '../controllers/platform.controller.js';
+
+const router = Router();
+
+router.get('/music/spotify/callback', asyncHandler(spotifyCallback));
+router.post('/music/spotify/callback', asyncHandler(spotifyCallback));
+router.use(protect);
+router.get('/music/spotify/start', asyncHandler(spotifyStart));
+router.delete('/music', asyncHandler(disconnectMusic));
+router.get('/music', asyncHandler(musicProfile));
+router.get('/campus/institutions', asyncHandler(campusInstitutionSearch));
+router.get('/campus', asyncHandler(campusOverview));
+router.post('/campus/join', asyncHandler(campusJoin));
+router.get('/campus/discovery', asyncHandler(campusDiscover));
+router.post('/media/sign', asyncHandler(mediaSign));
+router.post('/analytics/track', asyncHandler(track));
+router.get('/admin/analytics', adminOnly, asyncHandler(analytics));
+router.get('/admin/analytics/export', adminOnly, asyncHandler(exportAnalytics));
+router.get('/admin/ops', adminOnly, asyncHandler(ops));
+router.delete('/admin/cache', adminOnly, asyncHandler(clearCache));
+router.get('/admin/institutions', adminOnly, asyncHandler(institutions));
+router.post('/admin/institutions', adminOnly, asyncHandler(saveInstitution));
+router.put('/admin/institutions/:id', adminOnly, asyncHandler(saveInstitution));
+router.put('/admin/campus/:id', adminOnly, asyncHandler(verifyCampus));
+router.get('/admin/events', adminOnly, asyncHandler(pendingEvents));
+router.put('/admin/events/:id', adminOnly, asyncHandler(moderateEvent));
+router.get('/admin/flags', adminOnly, asyncHandler(flags));
+router.put('/admin/flags/:key', adminOnly, asyncHandler(saveFlag));
+
+export default router;
