@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/app_theme.dart';
+import '../providers/app_state.dart';
 import '../widgets/brand.dart';
 import 'connections_screen.dart';
+import 'community_screen.dart';
 import 'discover_screen.dart';
 import 'liked_you_screen.dart';
 import 'premium_screen.dart';
@@ -19,9 +22,10 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int index = 0;
-  final screens = const [DiscoverScreen(), RequestsScreen(), ConnectionsScreen(), LikedYouScreen(), PremiumScreen(), ProfileScreen(), SafetyScreen(), SettingsScreen()];
+  final screens = const [DiscoverScreen(), CommunityScreen(), RequestsScreen(), ConnectionsScreen(), LikedYouScreen(), PremiumScreen(), ProfileScreen(), SafetyScreen(), SettingsScreen()];
   static const destinations = [
     (Icons.explore_outlined, 'Discover'),
+    (Icons.groups_outlined, 'Community'),
     (Icons.group_add_outlined, 'Requests'),
     (Icons.chat_bubble_outline, 'Chats'),
     (Icons.favorite_border, 'Likes'),
@@ -45,7 +49,12 @@ class _HomeShellState extends State<HomeShell> {
         ),
         endDrawer: NavigationDrawer(
           selectedIndex: index,
-          onDestinationSelected: (value) {
+          onDestinationSelected: (value) async {
+            if (value == destinations.length) {
+              Navigator.pop(context);
+              await context.read<AppState>().logout();
+              return;
+            }
             setState(() => index = value);
             Navigator.pop(context);
           },
@@ -53,6 +62,8 @@ class _HomeShellState extends State<HomeShell> {
             const Padding(padding: EdgeInsets.fromLTRB(24, 28, 16, 14), child: BrandLogo()),
             const Divider(),
             for (final destination in destinations) NavigationDrawerDestination(icon: Icon(destination.$1), label: Text(destination.$2)),
+            const Divider(),
+            const NavigationDrawerDestination(icon: Icon(Icons.logout), label: Text('Logout')),
           ],
         ),
         body: screens[index],

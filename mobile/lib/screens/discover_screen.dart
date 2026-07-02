@@ -21,6 +21,27 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String mode = 'for-you';
   String myZodiac = 'Sagittarius';
   String compatibility = 'all';
+  double distanceKm = 50;
+  double minimumPhotos = 0;
+  bool hasBio = false;
+  bool verifiedOnly = false;
+  final Map<String, List<String>> advanced = {
+    'interests': [], 'lookingFor': [], 'openTo': [], 'languages': [], 'zodiac': [], 'education': [],
+    'familyPlans': [], 'communicationStyle': [], 'loveStyle': [], 'pets': [], 'drinking': [], 'smoking': [], 'workout': [], 'socialMedia': [],
+  };
+  static const filterOptions = <String, List<String>>{
+    'interests': ['Coffee', 'Travel', 'Fitness', 'Movies', 'Music', 'Books', 'Photography', 'Gaming'],
+    'lookingFor': ['Long-term partner', 'Short-term fun', 'New friends', 'Still figuring it out'],
+    'openTo': ['Dates', 'Chats', 'Adventure', 'Networking'],
+    'languages': ['English', 'Hindi', 'French', 'Spanish', 'Punjabi'],
+    'zodiac': ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'],
+    'education': ['High school', 'College', 'In grad school', 'Graduate degree'],
+    'familyPlans': ['Want someday', 'Don’t want', 'Have kids', 'Open to kids'],
+    'communicationStyle': ['Texter', 'Caller', 'Voice notes', 'In person'],
+    'loveStyle': ['Thoughtful gestures', 'Time together', 'Touch', 'Words of affirmation'],
+    'pets': ['Dog', 'Cat', 'No pets', 'Allergic'], 'drinking': ['Never', 'Socially', 'Often'], 'smoking': ['Never', 'Socially', 'Often'],
+    'workout': ['Every day', 'Often', 'Sometimes', 'Never'], 'socialMedia': ['Active', 'Scroller', 'Offline-ish'],
+  };
   final modes = const [
     ['for-you', 'For You'],
     ['online-now', 'Online'],
@@ -36,24 +57,35 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void initState() { super.initState(); refresh(); }
   Future<void> refresh() async {
     setState(() => loading = true);
-    try { profiles = await context.read<AppState>().discovery(ageMin: ages.start.round(), ageMax: ages.end.round(), gender: gender, mode: mode, myZodiac: myZodiac, compatibility: compatibility); error = null; }
+    try { profiles = await context.read<AppState>().discovery(mode: mode, myZodiac: myZodiac, compatibility: compatibility, filters: {
+      'ageMin': ages.start.round(), 'ageMax': ages.end.round(), 'distanceKm': distanceKm.round(), 'gender': gender,
+      'minimumPhotos': minimumPhotos.round(), 'hasBio': hasBio, 'verifiedOnly': verifiedOnly,
+      ...advanced,
+    }); error = null; }
     catch (e) { error = '$e'; }
     if (mounted) setState(() => loading = false);
   }
   Future<void> filters() async {
     var draftAges = ages;
     var draftGender = gender;
+    var draftDistance = distanceKm;
+    var draftMinimumPhotos = minimumPhotos;
+    var draftHasBio = hasBio;
+    var draftVerifiedOnly = verifiedOnly;
+    final draftAdvanced = advanced.map((key, value) => MapEntry(key, [...value]));
     final applied = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => StatefulBuilder(builder: (context, setSheetState) => Padding(
+      builder: (context) => StatefulBuilder(builder: (context, setSheetState) => ListView(
         padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        children: [
           const Text('Discovery filters', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
           const SizedBox(height: 20),
           Text('Age ${draftAges.start.round()}–${draftAges.end.round()}'),
           RangeSlider(values: draftAges, min: 18, max: 60, divisions: 42, labels: RangeLabels('${draftAges.start.round()}', '${draftAges.end.round()}'), onChanged: (value) => setSheetState(() => draftAges = value)),
+          Text('Maximum distance: ${draftDistance.round()} km'),
+          Slider(value: draftDistance, min: 1, max: 500, divisions: 499, onChanged: (value) => setSheetState(() => draftDistance = value)),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(initialValue: draftGender, decoration: const InputDecoration(labelText: 'Show me'), items: const [
             DropdownMenuItem(value: '', child: Text('Everyone')),
@@ -62,16 +94,26 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             DropdownMenuItem(value: 'non-binary', child: Text('Non-binary')),
             DropdownMenuItem(value: 'other', child: Text('Other')),
           ], onChanged: (value) => setSheetState(() => draftGender = value ?? '')),
+          Text('Minimum photos: ${draftMinimumPhotos.round()}'),
+          Slider(value: draftMinimumPhotos, min: 0, max: 6, divisions: 6, onChanged: (value) => setSheetState(() => draftMinimumPhotos = value)),
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Has a bio'), value: draftHasBio, onChanged: (value) => setSheetState(() => draftHasBio = value)),
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Verified profiles only'), value: draftVerifiedOnly, onChanged: (value) => setSheetState(() => draftVerifiedOnly = value)),
+          ...filterOptions.entries.map((entry) => Padding(padding: const EdgeInsets.only(top: 14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(_filterLabel(entry.key), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            Wrap(spacing: 7, children: entry.value.map((option) => FilterChip(label: Text(option), selected: draftAdvanced[entry.key]!.contains(option), onSelected: (_) => setSheetState(() { final values = draftAdvanced[entry.key]!; values.contains(option) ? values.remove(option) : values.add(option); }))).toList()),
+          ]))),
           const SizedBox(height: 20),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Apply filters')),
-        ]),
+        ],
       )),
     );
     if (applied == true) {
-      setState(() { ages = draftAges; gender = draftGender; });
+      setState(() { ages = draftAges; gender = draftGender; distanceKm = draftDistance; minimumPhotos = draftMinimumPhotos; hasBio = draftHasBio; verifiedOnly = draftVerifiedOnly; advanced..clear()..addAll(draftAdvanced); });
       await refresh();
     }
   }
+
+  static String _filterLabel(String value) => value.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match[1]}').replaceFirstMapped(RegExp(r'^.'), (match) => match[0]!.toUpperCase());
   Future<void> act(String action) async {
     if (profiles.isEmpty) return;
     final current = profiles.first;

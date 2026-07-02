@@ -188,14 +188,19 @@ class AppState extends ChangeNotifier {
   Future<Map<String, dynamic>> doubleDateDiscovery() async => Map<String, dynamic>.from((await api.dio.get('/social/double-date/discovery')).data);
   Future<Map<String, dynamic>> doubleDateSwipe(String groupId, String action) async => Map<String, dynamic>.from((await api.dio.post('/social/double-date/swipe', data: {'toGroupId': groupId, 'action': action})).data);
   Future<Map<String, dynamic>> spotifyConnect() async => Map<String, dynamic>.from((await api.dio.get('/platform/music/spotify/start')).data);
+  Future<Map<String, dynamic>> musicProfile() async => Map<String, dynamic>.from((await api.dio.get('/platform/music')).data);
+  Future<void> disconnectMusic() => api.dio.delete('/platform/music').then((_) {});
+  Future<Map<String, dynamic>> campusOverview() async => Map<String, dynamic>.from((await api.dio.get('/platform/campus')).data);
+  Future<List<Map<String, dynamic>>> campusInstitutionSearch(String query) async => ((await api.dio.get('/platform/campus/institutions', queryParameters: {'q': query})).data['institutions'] as List? ?? []).map((item) => Map<String, dynamic>.from(item)).toList();
   Future<void> campusJoin(Map<String, dynamic> data) => api.dio.post('/platform/campus/join', data: data).then((_) {});
+  Future<Map<String, dynamic>> campusDiscovery() async => Map<String, dynamic>.from((await api.dio.get('/platform/campus/discovery')).data);
 
-  Future<List<Profile>> discovery({int page = 1, int ageMin = 18, int ageMax = 60, String? gender, String mode = 'for-you', String myZodiac = 'Sagittarius', String compatibility = 'all'}) async {
+  Future<List<Profile>> discovery({int page = 1, String mode = 'for-you', String myZodiac = 'Sagittarius', String compatibility = 'all', Map<String, dynamic> filters = const {}}) async {
     final res = await api.dio.get('/discovery', queryParameters: {
-      'page': page, 'limit': 20, 'ageMin': ageMin, 'ageMax': ageMax, 'mode': mode,
+      'page': page, 'limit': 20, 'mode': mode,
+      ...filters.map((key, value) => MapEntry(key, value is List ? value.join(',') : value)),
       if (mode == 'astrology') 'myZodiac': myZodiac,
       if (mode == 'astrology') 'compatibility': compatibility,
-      if (gender != null && gender.isNotEmpty) 'gender': gender,
       if (verifiedOnlyBrowsing) 'verifiedOnly': true,
     });
     return (res.data['profiles'] as List? ?? []).map((e) => Profile.fromJson(Map<String, dynamic>.from(e))).toList();
@@ -259,8 +264,14 @@ class AppState extends ChangeNotifier {
   Future<void> updateSafetyCheckIn(String id, String status) => api.dio.put('/safety/check-ins/$id', data: {'status': status}).then((_) {});
 
   String _message(Object e) {
-    if (e is DioException && (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.connectionError)) {
-      return 'Cannot reach CyberNest. Check that you are online and the CyberNest server is running.';
+    if (e is DioException) {
+      if (e.type == DioExceptionType.connectionTimeout) return 'Connection to CyberNest timed out.';
+      if (e.type == DioExceptionType.sendTimeout) return 'Sending the request to CyberNest timed out.';
+      if (e.type == DioExceptionType.receiveTimeout) return 'CyberNest took too long to respond.';
+      if (e.type == DioExceptionType.badCertificate) return 'CyberNest returned an invalid HTTPS certificate.';
+      if (e.type == DioExceptionType.connectionError) {
+        return 'Cannot reach CyberNest (${e.requestOptions.uri.host}). Check your internet connection.';
+      }
     }
     final data = e is DioException ? e.response?.data : null;
     return data is Map && data['message'] != null ? '${data['message']}' : e.toString();
